@@ -1,0 +1,1005 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scrum_backlog project="NexAML - Odoo AML Compliance Module">
+
+    <!--
+    ==================================================================================
+    SCRUM BACKLOG DOCUMENTATION
+    ==================================================================================
+
+    AVAILABLE STATUS VALUES:
+    ========================
+
+    For Epics & User Stories:
+    - not_started    : Work has not begun
+    - in_progress    : Currently being worked on
+    - blocked        : Work stopped due to dependencies or issues
+    - in_review      : Code review or QA testing in progress
+    - completed      : Story/Epic fully done (meets Definition of Done)
+    - cancelled      : Removed from backlog (no longer needed)
+
+    Priority Levels:
+    - critical       : Must have, blocks other work
+    - high           : Important for sprint goal
+    - medium         : Should have if time permits
+    - low            : Nice to have, can be deferred
+
+    Notes Field Usage:
+    - Technical notes for developers
+    - Dependencies on other stories
+    - Blockers or risks
+    - Links to external resources
+    - Decisions made during planning
+
+    ==================================================================================
+    -->
+
+    <!-- EPIC 1: Core Models & Infrastructure -->
+    <epic id="EPIC-001" priority="critical">
+        <title>Core Models & Infrastructure</title>
+        <description>Build foundational data models, security, and module structure for NexAML</description>
+        <status>not_started</status>
+        <sprint>Sprint 1</sprint>
+
+        <user_story id="US-001" points="5">
+            <title>Create Module Structure</title>
+            <description>
+                Create basic module structure with __init__.py, __manifest__.py, and folder structure
+                (models/, views/, security/, data/, wizards/) so module can be installed in Odoo.
+            </description>
+            <acceptance_criteria>
+                - Module appears in Odoo apps list
+                - All dependencies declared (base, account, mail)
+                - Module installs without errors
+                - Icon and description present
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-002" points="3">
+            <title>Create Basic Access Rights</title>
+            <description>
+                Define basic access rights for all AML models using standard Odoo user groups.
+            </description>
+            <acceptance_criteria>
+                - security/ir.model.access.csv created
+                - All AML models accessible to base.group_user
+                - Full CRUD permissions for internal users
+                - No unauthorized access errors during testing
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes>Using standard Odoo groups instead of custom AML roles</notes>
+        </user_story>
+
+        <user_story id="US-003" points="3">
+            <title>Add Multi-Company Record Rules</title>
+            <description>
+                Add record rules so users only see AML records for their assigned companies.
+            </description>
+            <acceptance_criteria>
+                - Record rules defined for aml.case, aml.alert
+                - Domain filters by company_id
+                - Cross-company access blocked
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+    </epic>
+
+    <!-- EPIC 2: Customer Risk Assessment (CRA) -->
+    <epic id="EPIC-002" priority="high">
+        <title>Customer Risk Assessment (CRA)</title>
+        <description>Extend res.partner with risk assessment fields and calculation engine</description>
+        <status>not_started</status>
+        <sprint>Sprint 1-2</sprint>
+
+        <user_story id="US-005" points="8">
+            <title>Extend res.partner with AML Fields</title>
+            <description>
+                Add AML risk fields to customer records to track risk levels, PEP status, and related factors.
+            </description>
+            <acceptance_criteria>
+                - models/res_partner.py created with all fields from checklist
+                - Fields: risk_level, inherent_risk, residual_risk, pep_status, etc.
+                - Fields visible in partner form
+                - Data persists correctly
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-006" points="13">
+            <title>Implement Risk Calculation Engine</title>
+            <description>
+                Implement automatic risk calculation based on weighted factors (Customer 30%, Geography 20%,
+                Product 30%, Channel 20%) so partners have accurate risk scores.
+            </description>
+            <acceptance_criteria>
+                - _compute_aml_risk() method implemented
+                - Formula: (Customer × 0.30) + (Geography × 0.20) + (Product × 0.30) + (Channel × 0.20)
+                - Risk levels: Low (1.0-1.6), Medium (1.7-2.3), High (2.4-3.0)
+                - Risk level badge updates automatically
+                - Calculation completes in &lt; 2 seconds
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-007" points="5">
+            <title>Add NexAML Tab to Partner Form</title>
+            <description>
+                Add dedicated NexAML tab in partner form to view and edit all AML-related information.
+            </description>
+            <acceptance_criteria>
+                - views/res_partner_views.xml created
+                - New tab "NexAML" added via inheritance
+                - Risk Assessment group with fields and "Assess Risk" button
+                - Risk Factors group with input fields
+                - Sanctions Screening section with status and "Screen Now" button
+                - UBOs section with one2many field
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-008" points="3">
+            <title>Create aml.product Model</title>
+            <description>
+                Define product risk classifications so customer risk can be calculated based on products they use.
+            </description>
+            <acceptance_criteria>
+                - models/aml_product.py created
+                - Fields: name, risk_score (1-3)
+                - Many2many relation to res.partner
+                - Basic tree/form views
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-009" points="3">
+            <title>Create aml.control Model</title>
+            <description>
+                Define risk controls/mitigations so residual risk can be calculated after applying controls.
+            </description>
+            <acceptance_criteria>
+                - models/aml_control.py created
+                - Fields: name, mitigation_factor
+                - Many2many relation to res.partner
+                - Controls applied in risk calculation
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-010" points="2">
+            <title>Add EDD Requirement Flag</title>
+            <description>
+                Add automatic EDD required flag based on risk level to identify which customers need enhanced due diligence.
+            </description>
+            <acceptance_criteria>
+                - aml_edd_required computed field
+                - Triggered for Medium/High risk based on settings
+                - Visible in partner form
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+    </epic>
+
+    <!-- EPIC 3: Sanctions Screening -->
+    <epic id="EPIC-003" priority="high">
+        <title>Sanctions Screening</title>
+        <description>Integrate OpenSanctions/Yente API for sanctions and PEP screening</description>
+        <status>not_started</status>
+        <sprint>Sprint 2</sprint>
+
+        <user_story id="US-011" points="8">
+            <title>Create aml.screening Model</title>
+            <description>
+                Create model to store screening results to track all sanctions checks performed on partners.
+            </description>
+            <acceptance_criteria>
+                - models/aml_screening.py created
+                - Fields: partner_id, screening_type, status, match_score, matched_name, etc.
+                - One2many relation from res.partner
+                - Tree and form views created
+                - Status badge: pending/clear/match/false_positive
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-012" points="13">
+            <title>Integrate Yente API</title>
+            <description>
+                Integrate with Yente API so partners can be screened against sanctions lists automatically.
+            </description>
+            <acceptance_criteria>
+                - HTTP client for Yente API implemented
+                - POST /search endpoint called with partner name/DOB/country
+                - Response parsed and aml.screening records created
+                - Match score calculated (fuzzy matching)
+                - API errors handled gracefully
+                - API call completes in &lt; 5 seconds
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes>Requires Yente API credentials in settings</notes>
+        </user_story>
+
+        <user_story id="US-013" points="5">
+            <title>Add Screening Config Settings</title>
+            <description>
+                Add configuration settings for Yente API (URL, key, threshold).
+            </description>
+            <acceptance_criteria>
+                - res.config.settings inherited
+                - Fields: aml_yente_url, aml_yente_api_key, aml_screening_threshold, aml_auto_screen_on_create
+                - Settings view created with NexAML section
+                - Config parameters stored in ir.config_parameter
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-014" points="5">
+            <title>Auto-Screen on Partner Create</title>
+            <description>
+                Implement automatic screening when a partner is created so sanctions matches are detected immediately.
+            </description>
+            <acceptance_criteria>
+                - res.partner.create() overridden
+                - action_screen_sanctions() called if auto_screen enabled
+                - Works for single and batch creates
+                - No performance impact if disabled
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-015" points="3">
+            <title>Add Manual Screening Button</title>
+            <description>
+                Add "Screen Now" button on partner form to manually trigger screening.
+            </description>
+            <acceptance_criteria>
+                - "Screen Now" button in NexAML tab
+                - Calls action_screen_sanctions()
+                - Shows notification on completion
+                - Creates aml.screening record
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-016" points="5">
+            <title>Create Periodic Rescreening Cron</title>
+            <description>
+                Add daily automatic rescreening of high-risk partners to detect new sanctions matches.
+            </description>
+            <acceptance_criteria>
+                - data/cron.xml created
+                - ir.cron record for daily rescreening
+                - cron_rescreen_partners() method implemented
+                - Rescreens partners with high risk or previous matches
+                - Runs at 2 AM daily
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-017" points="3">
+            <title>Mark False Positives</title>
+            <description>
+                Add ability to mark screening matches as false positives so they don't trigger alerts repeatedly.
+            </description>
+            <acceptance_criteria>
+                - action_mark_false_positive() method
+                - Status updates to 'false_positive'
+                - Review notes field available
+                - reviewed_by and review_date tracked
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+    </epic>
+
+    <!-- EPIC 4: Transaction Monitoring -->
+    <epic id="EPIC-004" priority="high">
+        <title>Transaction Monitoring</title>
+        <description>Monitor account moves and payments for suspicious patterns</description>
+        <status>not_started</status>
+        <sprint>Sprint 3</sprint>
+
+        <user_story id="US-018" points="8">
+            <title>Create aml.transaction.rule Model</title>
+            <description>
+                Create configurable transaction monitoring rules to define thresholds and patterns to detect.
+            </description>
+            <acceptance_criteria>
+                - models/aml_transaction_rule.py created
+                - Fields: name, code, rule_type (threshold/velocity/pattern)
+                - Fields: amount_threshold, period_days, transaction_count
+                - Fields: domain_filter, applies_to_risk_level, alert_severity
+                - Tree and form views
+                - Active flag to enable/disable rules
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-019" points="13">
+            <title>Extend account.move for Monitoring</title>
+            <description>
+                Extend account.move to be monitored against rules to detect suspicious transactions.
+            </description>
+            <acceptance_criteria>
+                - models/account_move.py inherits account.move
+                - Fields: aml_monitored, aml_risk_score, aml_alert_ids, aml_alert_count
+                - create() overridden to call _check_aml_rules()
+                - _check_aml_rules() evaluates all active rules
+                - aml.alert created when rule triggered
+                - Rule evaluation completes in &lt; 1 second per transaction
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-020" points="8">
+            <title>Implement Rule Evaluation Logic</title>
+            <description>
+                Implement rule evaluation methods so each rule type (threshold, velocity, pattern) can be checked.
+            </description>
+            <acceptance_criteria>
+                - _evaluate() method on aml.transaction.rule
+                - Threshold: amount > threshold
+                - Velocity: count > threshold in period_days
+                - Pattern: domain_filter evaluation
+                - Partner risk level filtering applied
+                - Returns True/False for rule match
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-021" points="5">
+            <title>Create Default Transaction Rules</title>
+            <description>
+                Create default rules (high value, velocity) so the system is useful out of the box.
+            </description>
+            <acceptance_criteria>
+                - data/transaction_rules.xml created
+                - HIGH_VALUE rule: amount > 50000
+                - VELOCITY rule: 10+ transactions in 1 day
+                - ROUND_AMOUNT rule: amount ends in 000
+                - Rules active by default
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-022" points="3">
+            <title>Add Transaction Risk Score</title>
+            <description>
+                Add risk scores on transactions for prioritized review.
+            </description>
+            <acceptance_criteria>
+                - aml_risk_score computed field on account.move
+                - Based on: amount, partner risk, number of alerts
+                - Displayed in invoice form
+                - Can filter/sort by risk score
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-023" points="2">
+            <title>Add Monitoring Settings</title>
+            <description>
+                Add settings to enable/disable monitoring for invoices and payments.
+            </description>
+            <acceptance_criteria>
+                - aml_monitor_invoices and aml_monitor_payments in res.config.settings
+                - Checkboxes in settings view
+                - Monitoring skipped if disabled
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+    </epic>
+
+    <!-- EPIC 5: Case Management -->
+    <epic id="EPIC-005" priority="medium">
+        <title>Case Management</title>
+        <description>Workflow for investigating and resolving AML cases</description>
+        <status>not_started</status>
+        <sprint>Sprint 3-4</sprint>
+
+        <user_story id="US-024" points="13">
+            <title>Create aml.case Model</title>
+            <description>
+                Create case management system to track investigations from open to closed.
+            </description>
+            <acceptance_criteria>
+                - models/aml_case.py created
+                - Inherits mail.thread and mail.activity.mixin
+                - Fields: name (sequence), partner_id, case_type, state, priority
+                - Fields: alert_ids, move_ids, assigned_to, opened_date, closed_date
+                - Fields: description, investigation_notes (Html), resolution, resolution_notes
+                - States: open, investigating, review, resolved, closed
+                - Auto-generated case numbers
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-025" points="8">
+            <title>Create Case Views</title>
+            <description>
+                Create tree, form, and kanban views for cases to manage investigations efficiently.
+            </description>
+            <acceptance_criteria>
+                - views/aml_case_views.xml created
+                - Tree view with key fields
+                - Form view with notebook tabs (Details, Alerts, Transactions, Notes)
+                - Kanban view grouped by state
+                - Filters: My Cases, High Priority, Open Cases
+                - State buttons (Investigate, Review, Resolve, Close)
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-026" points="5">
+            <title>Implement Case Workflow</title>
+            <description>
+                Implement workflow actions to move cases through states for structured process.
+            </description>
+            <acceptance_criteria>
+                - action_investigate(), action_review(), action_resolve(), action_close() methods
+                - State transitions validated
+                - Chatter messages logged on state changes
+                - closed_date set automatically
+                - Activities can be scheduled
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-027" points="3">
+            <title>Link Alerts to Cases</title>
+            <description>
+                Add Many2many relation between cases and alerts to track which alerts are part of an investigation.
+            </description>
+            <acceptance_criteria>
+                - alert_ids Many2many field on aml.case
+                - case_id field on aml.alert
+                - Alerts tab in case form
+                - Can add/remove alerts from case
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-028" points="3">
+            <title>Link Transactions to Cases</title>
+            <description>
+                Link transactions to cases to review all related financial activity.
+            </description>
+            <acceptance_criteria>
+                - move_ids Many2many field on aml.case
+                - Transactions tab in case form
+                - Can search and add account.move records
+                - Shows transaction details (date, amount, partner)
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-029" points="2">
+            <title>Add Case Assignment</title>
+            <description>
+                Add ability to assign cases to users for workload distribution.
+            </description>
+            <acceptance_criteria>
+                - assigned_to field (Many2one res.users)
+                - Assignment tracked in chatter
+                - Filter "My Cases" shows assigned cases
+                - Email notification on assignment (optional)
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+    </epic>
+
+    <!-- EPIC 6: Alert Management -->
+    <epic id="EPIC-006" priority="medium">
+        <title>Alert Management</title>
+        <description>Review and triage transaction monitoring alerts</description>
+        <status>not_started</status>
+        <sprint>Sprint 4</sprint>
+
+        <user_story id="US-030" points="8">
+            <title>Create aml.alert Model</title>
+            <description>
+                Create alert model so transaction monitoring rules can create alerts for review.
+            </description>
+            <acceptance_criteria>
+                - models/aml_alert.py created
+                - Fields: name (computed), partner_id, move_id, rule_id
+                - Fields: alert_date, severity, status, case_id
+                - Fields: triggered_value, alert_reason, review_notes
+                - Fields: reviewed_by, reviewed_date
+                - Statuses: new, investigating, closed, escalated
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-031" points="5">
+            <title>Create Alert Views</title>
+            <description>
+                Create views to review and manage alerts to triage suspicious transactions.
+            </description>
+            <acceptance_criteria>
+                - views/aml_alert_views.xml created
+                - Tree view with severity badges
+                - Form view with alert details and review section
+                - Kanban view grouped by severity
+                - Filters: New Alerts, High Severity, My Reviews
+                - Search by partner, rule, date range
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-032" points="5">
+            <title>Escalate Alert to Case</title>
+            <description>
+                Add ability to escalate alerts to cases so serious issues can be investigated thoroughly.
+            </description>
+            <acceptance_criteria>
+                - action_escalate_to_case() method
+                - Creates aml.case with alert linked
+                - Sets case priority based on alert severity
+                - Alert status → escalated
+                - Returns action to open new case
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-033" points="3">
+            <title>Close Alert</title>
+            <description>
+                Add ability to close alerts that don't require investigation to focus on high-priority items.
+            </description>
+            <acceptance_criteria>
+                - action_close() method
+                - Status → closed
+                - review_notes required
+                - reviewed_by and reviewed_date set automatically
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-034" points="2">
+            <title>Alert Count on Partners</title>
+            <description>
+                Add alert counts on partner records to quickly see which customers have alerts.
+            </description>
+            <acceptance_criteria>
+                - aml_alert_count computed field on res.partner
+                - Counts alerts in 'new' or 'investigating' status
+                - Smart button on partner form
+                - Opens alert list filtered by partner
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+    </epic>
+
+    <!-- EPIC 7: Reporting & Compliance -->
+    <epic id="EPIC-007" priority="medium">
+        <title>Reporting & Compliance</title>
+        <description>Generate SAR/STR reports and compliance summaries</description>
+        <status>not_started</status>
+        <sprint>Sprint 5</sprint>
+
+        <user_story id="US-035" points="13">
+            <title>Create Report Wizard</title>
+            <description>
+                Create wizard to generate AML reports for filing SAR/STR and compliance summaries.
+            </description>
+            <acceptance_criteria>
+                - wizards/aml_report_wizard.py created
+                - Report types: SAR, STR, Periodic Summary, Risk Summary
+                - Fields: report_type, date_from, date_to, partner_ids, case_ids, format
+                - Formats: PDF, Excel, goAML XML
+                - action_generate_report() method
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-036" points="8">
+            <title>Generate SAR Report</title>
+            <description>
+                Implement SAR (Suspicious Activity Report) generation for regulatory filing.
+            </description>
+            <acceptance_criteria>
+                - _generate_sar() method implemented
+                - Collects case data, partner info, transactions
+                - PDF format with narrative, timeline, supporting data
+                - goAML XML export option
+                - Report saved as attachment to case
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes>May require AI service for narrative generation</notes>
+        </user_story>
+
+        <user_story id="US-037" points="8">
+            <title>Generate STR Report</title>
+            <description>
+                Implement STR (Suspicious Transaction Report) generation for specific transactions.
+            </description>
+            <acceptance_criteria>
+                - _generate_str() method implemented
+                - Focused on specific transactions
+                - Transaction details, customer info, reason for suspicion
+                - PDF and goAML XML formats
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-038" points="5">
+            <title>Generate Periodic Compliance Summary</title>
+            <description>
+                Create periodic compliance summaries for management reporting on AML activities.
+            </description>
+            <acceptance_criteria>
+                - Summary includes: cases opened/closed, alerts generated, screenings performed
+                - High-risk customer count
+                - Charts: cases by type, alerts by severity
+                - Excel and PDF formats
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-039" points="5">
+            <title>Generate Customer Risk Summary</title>
+            <description>
+                Create customer risk summaries to review risk profiles in bulk.
+            </description>
+            <acceptance_criteria>
+                - Lists selected customers with risk levels
+                - Includes: inherent risk, residual risk, EDD status
+                - Shows last assessment date, next review date
+                - Excel export for analysis
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-040" points="8">
+            <title>Implement goAML XML Export</title>
+            <description>
+                Implement goAML XML export to submit reports to regulatory authorities.
+            </description>
+            <acceptance_criteria>
+                - goAML schema compliance
+                - XML includes: report header, subject info, transaction details, narrative
+                - Validates against goAML XSD
+                - Downloadable as .xml file
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes>Reference goAML documentation for schema</notes>
+        </user_story>
+
+        <user_story id="US-041" points="5">
+            <title>Optional AI Narrative Generation</title>
+            <description>
+                Add optional AI-generated narratives for reports to save time writing summaries.
+            </description>
+            <acceptance_criteria>
+                - AI service integration (if configured)
+                - Generates narrative from case data
+                - Editable before report finalization
+                - Gracefully degrades if AI unavailable
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes>Optional feature - requires external AI service</notes>
+        </user_story>
+    </epic>
+
+    <!-- EPIC 8: Configuration & Settings -->
+    <epic id="EPIC-008" priority="low">
+        <title>Configuration & Settings</title>
+        <description>Admin settings for AML module configuration</description>
+        <status>not_started</status>
+        <sprint>Sprint 2-5</sprint>
+
+        <user_story id="US-042" points="5">
+            <title>Add AML Settings to Configuration</title>
+            <description>
+                Add centralized AML settings for module configuration without code changes.
+            </description>
+            <acceptance_criteria>
+                - models/res_config_settings.py inherits res.config.settings
+                - All config fields defined with config_parameter
+                - Settings accessible via Settings > General Settings
+                - Values persist across restarts
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-043" points="3">
+            <title>Create Settings View</title>
+            <description>
+                Create user-friendly settings interface to configure NexAML easily.
+            </description>
+            <acceptance_criteria>
+                - views/res_config_settings_views.xml created
+                - NexAML section with organized subsections
+                - Sections: Sanctions Screening, Risk Assessment, Transaction Monitoring, AI Services
+                - Help text for each setting
+                - Save button persists changes
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+    </epic>
+
+    <!-- EPIC 9: Menu & Navigation -->
+    <epic id="EPIC-009" priority="low">
+        <title>Menu & Navigation</title>
+        <description>Main menu structure and navigation for NexAML</description>
+        <status>not_started</status>
+        <sprint>Sprint 4</sprint>
+
+        <user_story id="US-044" points="3">
+            <title>Create Main Menu Structure</title>
+            <description>
+                Create main menu for NexAML to navigate to all AML features.
+            </description>
+            <acceptance_criteria>
+                - views/menu.xml created
+                - Top-level menu "NexAML" with icon
+                - Submenus: Dashboard, Operations, Configuration, Reporting
+                - Operations: Cases, Alerts, Screenings
+                - All menus link to correct actions
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-045" points="5">
+            <title>Create Dashboard View</title>
+            <description>
+                Create dashboard to see key metrics at a glance.
+            </description>
+            <acceptance_criteria>
+                - Dashboard shows: new alerts count, open cases count, high-risk partners count
+                - Links to filtered views (e.g., click alert count opens new alerts)
+                - Charts: cases by state, alerts by severity
+                - Refreshes data in real-time
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes>May use Odoo's dashboard framework or custom view</notes>
+        </user_story>
+    </epic>
+
+    <!-- EPIC 10: Testing & Documentation -->
+    <epic id="EPIC-010" priority="low">
+        <title>Testing & Documentation</title>
+        <description>Comprehensive testing and user documentation</description>
+        <status>not_started</status>
+        <sprint>Sprint 6</sprint>
+
+        <user_story id="US-046" points="13">
+            <title>Write Unit Tests</title>
+            <description>
+                Write unit tests for core functionality to catch regressions early.
+            </description>
+            <acceptance_criteria>
+                - tests/ directory created
+                - Tests for risk calculation
+                - Tests for rule evaluation
+                - Tests for screening API integration
+                - Tests for case workflow
+                - 80%+ code coverage
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-047" points="8">
+            <title>Integration Testing</title>
+            <description>
+                Create integration tests to validate end-to-end workflows.
+            </description>
+            <acceptance_criteria>
+                - Test: Create partner → auto-screen → alert generated → escalate to case → resolve
+                - Test: Create transaction → rule triggered → alert created
+                - Test: Generate SAR report from case
+                - All tests pass in clean database
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-048" points="8">
+            <title>Create User Documentation</title>
+            <description>
+                Create user documentation for learning how to use NexAML.
+            </description>
+            <acceptance_criteria>
+                - User guide in PDF/HTML
+                - Sections: Getting Started, Risk Assessment, Screening, Monitoring, Cases, Reporting
+                - Screenshots for each major feature
+                - FAQ section
+                - Troubleshooting guide
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-049" points="5">
+            <title>Create Technical Documentation</title>
+            <description>
+                Create technical documentation for customization and maintenance.
+            </description>
+            <acceptance_criteria>
+                - README.md with installation instructions
+                - Architecture overview
+                - Model relationships diagram
+                - API integration guide (Yente)
+                - Configuration reference
+                - Code comments and docstrings
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-050" points="5">
+            <title>UAT with Compliance Team</title>
+            <description>
+                Conduct UAT with compliance team to ensure module meets regulatory requirements.
+            </description>
+            <acceptance_criteria>
+                - UAT environment set up
+                - Test scenarios documented
+                - Compliance team trained on module
+                - Feedback collected and addressed
+                - Sign-off from compliance officer
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+    </epic>
+
+    <!-- EPIC 11: Deployment & Production -->
+    <epic id="EPIC-011" priority="low">
+        <title>Deployment & Production</title>
+        <description>Prepare for production deployment</description>
+        <status>not_started</status>
+        <sprint>Sprint 6</sprint>
+
+        <user_story id="US-051" points="5">
+            <title>Production Deployment Checklist</title>
+            <description>
+                Create deployment checklist for smooth production rollout.
+            </description>
+            <acceptance_criteria>
+                - Backup existing database
+                - Install module in production
+                - Configure Yente API credentials
+                - Set up cron jobs
+                - Verify multi-company settings
+                - Test with sample data
+                - Monitor logs for errors
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-052" points="3">
+            <title>Performance Monitoring Setup</title>
+            <description>
+                Set up monitoring for NexAML to detect performance issues.
+            </description>
+            <acceptance_criteria>
+                - Monitor risk calculation time
+                - Monitor API call latency (Yente)
+                - Monitor transaction monitoring overhead
+                - Alert on errors or timeouts
+                - Dashboard for key metrics
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+
+        <user_story id="US-053" points="3">
+            <title>Data Migration Plan</title>
+            <description>
+                Create migration plan for existing customers to have initial risk assessments.
+            </description>
+            <acceptance_criteria>
+                - Script to assign default risk factors to existing partners
+                - Bulk risk assessment for all customers
+                - Verify data quality after migration
+                - Rollback plan in case of issues
+            </acceptance_criteria>
+            <status>not_started</status>
+            <notes></notes>
+        </user_story>
+    </epic>
+
+    <!-- Sprint Planning Summary -->
+    <sprint_planning>
+        <sprint id="sprint-1" duration="2_weeks" points_capacity="40">
+            <name>Sprint 1: Foundation</name>
+            <goal>Core models, basic access, and CRA fields in place</goal>
+            <stories>US-001, US-002, US-003, US-005, US-006, US-007, US-008, US-009</stories>
+            <total_points>43</total_points>
+            <notes>Slightly over capacity - prioritize US-001 through US-007</notes>
+        </sprint>
+
+        <sprint id="sprint-2" duration="2_weeks" points_capacity="40">
+            <name>Sprint 2: Sanctions Screening</name>
+            <goal>Yente integration complete, auto-screening working</goal>
+            <stories>US-010, US-011, US-012, US-013, US-014, US-015, US-016, US-017, US-042</stories>
+            <total_points>42</total_points>
+            <notes></notes>
+        </sprint>
+
+        <sprint id="sprint-3" duration="2_weeks" points_capacity="40">
+            <name>Sprint 3: Transaction Monitoring</name>
+            <goal>Transaction monitoring rules and alerts functional</goal>
+            <stories>US-018, US-019, US-020, US-021, US-022, US-023, US-024</stories>
+            <total_points>42</total_points>
+            <notes></notes>
+        </sprint>
+
+        <sprint id="sprint-4" duration="2_weeks" points_capacity="40">
+            <name>Sprint 4: Cases & Alerts UI</name>
+            <goal>Case management workflow complete, alert triage working</goal>
+            <stories>US-025, US-026, US-027, US-028, US-029, US-030, US-031, US-032, US-033, US-034, US-044</stories>
+            <total_points>39</total_points>
+            <notes></notes>
+        </sprint>
+
+        <sprint id="sprint-5" duration="2_weeks" points_capacity="40">
+            <name>Sprint 5: Reporting</name>
+            <goal>SAR/STR reporting and goAML export complete</goal>
+            <stories>US-035, US-036, US-037, US-038, US-039, US-040, US-041, US-043, US-045</stories>
+            <total_points>47</total_points>
+            <notes>Over capacity - may defer US-041 (AI narratives) and US-045 (dashboard) to Sprint 6</notes>
+        </sprint>
+
+        <sprint id="sprint-6" duration="2_weeks" points_capacity="40">
+            <name>Sprint 6: Testing & Deployment</name>
+            <goal>Production-ready module with tests and documentation</goal>
+            <stories>US-046, US-047, US-048, US-049, US-050, US-051, US-052, US-053</stories>
+            <total_points>50</total_points>
+            <notes>Heavy sprint - focus on critical testing (US-046, US-047, US-050)</notes>
+        </sprint>
+    </sprint_planning>
+
+    <!-- Definition of Done -->
+    <definition_of_done>
+        <criteria>Code implemented and committed</criteria>
+        <criteria>Unit tests written and passing</criteria>
+        <criteria>Code reviewed by peer</criteria>
+        <criteria>Documentation updated</criteria>
+        <criteria>Acceptance criteria met and verified</criteria>
+        <criteria>No critical bugs</criteria>
+        <criteria>Deployed to staging environment</criteria>
+        <criteria>Demo'ed to product owner</criteria>
+    </definition_of_done>
+
+</scrum_backlog>
