@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: nex_odoo_postgres
+    environment:
+      - POSTGRES_DB=odoo
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=odoo
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data/pgdata
+    ports:
+      - "5433:5432"
+    networks:
+      - nex-odoo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  odoo:
+    image: odoo:19.0
+    container_name: nex_odoo
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8069:8069"
+      - "8072:8072"  # Longpolling
+    environment:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=odoo
+      - DB_PORT=5432
+    volumes:
+      # Mount the nexaml addon
+      - ./addons/nexaml:/mnt/extra-addons/nexaml:ro
+      # Persistent data
+      - odoo-web-data:/var/lib/odoo
+      # Optional: mount custom config
+      - ./odoo.conf:/etc/odoo/odoo.conf:ro
+    networks:
+      - nex-odoo-network
+    command: --dev=all --log-level=debug
+    restart: unless-stopped
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: nex_odoo_pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@nex-odoo.local
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - nex-odoo-network
+    depends_on:
+      - db
+    profiles:
+      - tools
+
+volumes:
+  odoo-db-data:
+    driver: local
+  odoo-web-data:
+    driver: local
+  pgadmin-data:
+    driver: local
+
+networks:
+  nex-odoo-network:
+    driver: bridge

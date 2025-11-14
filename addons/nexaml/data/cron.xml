@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Periodic Rescreening Cron Job -->
+        <record id="ir_cron_rescreen_partners" model="ir.cron">
+            <field name="name">NexAML: Rescreen High-Risk Partners</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_rescreen_partners()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).replace(hour=2, minute=0, second=0)"/>
+        </record>
+
+        <!-- Periodic Risk Reassessment Cron Job -->
+        <record id="ir_cron_reassess_risk" model="ir.cron">
+            <field name="name">NexAML: Periodic Risk Reassessment</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_reassess_risk()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).replace(hour=3, minute=0, second=0)"/>
+        </record>
+    </data>
+</odoo>

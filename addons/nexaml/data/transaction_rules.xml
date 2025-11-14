@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Default Transaction Monitoring Rules -->
+
+        <!-- High Value Transaction Rule -->
+        <record id="rule_high_value" model="aml.transaction.rule">
+            <field name="name">High Value Transaction</field>
+            <field name="code">HIGH_VALUE</field>
+            <field name="sequence">10</field>
+            <field name="rule_type">threshold</field>
+            <field name="amount_threshold">50000</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">high</field>
+            <field name="description">Alert on transactions exceeding $50,000</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- Velocity/Frequency Anomaly -->
+        <record id="rule_velocity" model="aml.transaction.rule">
+            <field name="name">Velocity/Frequency Anomaly</field>
+            <field name="code">VELOCITY_ANOMALY</field>
+            <field name="sequence">20</field>
+            <field name="rule_type">velocity</field>
+            <field name="period_days">7</field>
+            <field name="transaction_count">10</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">medium</field>
+            <field name="description">Alert when transaction frequency exceeds 3x normal baseline (Scenario 9)</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- Round Amount Rule -->
+        <record id="rule_round_amount" model="aml.transaction.rule">
+            <field name="name">Round Amount Pattern</field>
+            <field name="code">ROUND_AMOUNT</field>
+            <field name="sequence">30</field>
+            <field name="rule_type">pattern</field>
+            <field name="domain_filter">[('amount_total', '&gt;', 10000), ('amount_total', '%', 1000, '=', 0)]</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">low</field>
+            <field name="description">Alert on 5+ round-amount transactions (multiples of $10,000) in 30 days (Scenario 10)</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- High Risk Customer Large Transaction -->
+        <record id="rule_high_risk_transaction" model="aml.transaction.rule">
+            <field name="name">High Risk Customer Large Transaction</field>
+            <field name="code">HIGH_RISK_LARGE</field>
+            <field name="sequence">15</field>
+            <field name="rule_type">threshold</field>
+            <field name="amount_threshold">25000</field>
+            <field name="applies_to_risk_level">high</field>
+            <field name="alert_severity">critical</field>
+            <field name="description">Alert on transactions over $25,000 from high-risk customers</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- High-Value Cumulative Transactions -->
+        <record id="rule_rapid_velocity" model="aml.transaction.rule">
+            <field name="name">High-Value Cumulative Transactions</field>
+            <field name="code">CUMULATIVE_MONTHLY</field>
+            <field name="sequence">25</field>
+            <field name="rule_type">velocity</field>
+            <field name="period_days">30</field>
+            <field name="velocity_amount">100000</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">high</field>
+            <field name="description">Alert when cumulative transactions exceed $100,000 in 30 days (Scenario 2)</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- Dormant Account Reactivation -->
+        <record id="rule_dormant_reactivation" model="aml.transaction.rule">
+            <field name="name">Dormant Account Reactivation</field>
+            <field name="code">DORMANT_REACTIVATION</field>
+            <field name="sequence">40</field>
+            <field name="rule_type">pattern</field>
+            <field name="amount_threshold">10000</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">high</field>
+            <field name="description">Alert when customer with &gt;90 days inactivity makes large transaction</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- New Customer Large Transaction -->
+        <record id="rule_new_customer_large" model="aml.transaction.rule">
+            <field name="name">New Customer High-Value Activity</field>
+            <field name="code">NEW_CUSTOMER_LARGE</field>
+            <field name="sequence">35</field>
+            <field name="rule_type">threshold</field>
+            <field name="amount_threshold">25000</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">high</field>
+            <field name="description">Alert when customer &lt;6 months old makes transaction &gt;$25,000</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- Structuring Detection -->
+        <record id="rule_structuring" model="aml.transaction.rule">
+            <field name="name">Structuring/Smurfing Pattern</field>
+            <field name="code">STRUCTURING</field>
+            <field name="sequence">55</field>
+            <field name="rule_type">velocity</field>
+            <field name="period_days">7</field>
+            <field name="transaction_count">3</field>
+            <field name="amount_threshold">9000</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">critical</field>
+            <field name="description">Alert on 3+ transactions of $9,000-$9,999 in 7 days (90% of $10k reporting threshold, Scenario 8)</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- High-Risk Jurisdiction Transaction -->
+        <record id="rule_high_risk_jurisdiction" model="aml.transaction.rule">
+            <field name="name">High-Risk Jurisdiction Transaction</field>
+            <field name="code">HIGH_RISK_JURISDICTION</field>
+            <field name="sequence">70</field>
+            <field name="rule_type">threshold</field>
+            <field name="amount_threshold">5000</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">high</field>
+            <field name="description">Alert on transactions to/from FATF blacklist/greylist or sanctioned countries exceeding $5,000</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- High-Risk Payment Channel -->
+        <record id="rule_high_risk_channel" model="aml.transaction.rule">
+            <field name="name">High-Risk Payment Channel</field>
+            <field name="code">HIGH_RISK_CHANNEL</field>
+            <field name="sequence">75</field>
+            <field name="rule_type">pattern</field>
+            <field name="amount_threshold">10000</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">high</field>
+            <field name="description">Alert on high-risk payment channels (cryptocurrency, cash, international wire) exceeding thresholds</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- Third-Party Payment Pattern -->
+        <record id="rule_third_party_payment" model="aml.transaction.rule">
+            <field name="name">Third-Party Payment Pattern</field>
+            <field name="code">THIRD_PARTY_PAYMENT</field>
+            <field name="sequence">80</field>
+            <field name="rule_type">threshold</field>
+            <field name="amount_threshold">15000</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">high</field>
+            <field name="description">Alert on third-party payments exceeding $15,000 or cumulative $30,000 in 30 days</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- Rapid In-Out (Layering) -->
+        <record id="rule_rapid_in_out" model="aml.transaction.rule">
+            <field name="name">Rapid In-Out (Layering)</field>
+            <field name="code">RAPID_IN_OUT</field>
+            <field name="sequence">85</field>
+            <field name="rule_type">pattern</field>
+            <field name="amount_threshold">15000</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">critical</field>
+            <field name="description">Alert when 80%+ of deposit withdrawn within 24-72 hours (min $15,000)</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- Expected vs Actual Volume Variance -->
+        <record id="rule_volume_variance" model="aml.transaction.rule">
+            <field name="name">Expected vs Actual Volume Variance</field>
+            <field name="code">VOLUME_VARIANCE</field>
+            <field name="sequence">90</field>
+            <field name="rule_type">pattern</field>
+            <field name="amount_threshold">10000</field>
+            <field name="applies_to_risk_level">all</field>
+            <field name="alert_severity">medium</field>
+            <field name="description">Alert when actual monthly volume exceeds expected volume by 150% (min $10,000 variance)</field>
+            <field name="active" eval="True"/>
+        </record>
+
+    </data>
+</odoo>

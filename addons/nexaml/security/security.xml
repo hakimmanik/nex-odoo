@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- Multi-Company Record Rules -->
+
+        <!-- Note: res.partner already has company rules from base module -->
+        <!-- aml.product and aml.control are configuration models and don't need company filtering -->
+
+        <!-- Multi-Company Record Rules -->
+
+        <!-- Screening: Company-specific -->
+        <record id="screening_company_rule" model="ir.rule">
+            <field name="name">Screening: multi-company</field>
+            <field name="model_id" ref="model_aml_screening"/>
+            <field name="domain_force">['|', ('partner_id', '=', False), ('partner_id.company_id', 'in', company_ids)]</field>
+            <field name="perm_create" eval="False"/>
+        </record>
+
+        <!-- Alert: Company-specific -->
+        <record id="alert_company_rule" model="ir.rule">
+            <field name="name">Alert: multi-company</field>
+            <field name="model_id" ref="model_aml_alert"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <!-- Case: Company-specific -->
+        <record id="case_company_rule" model="ir.rule">
+            <field name="name">Case: multi-company</field>
+            <field name="model_id" ref="model_aml_case"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+
+    </data>
+</odoo>

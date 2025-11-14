@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend Partner Form with NexAML Tab -->
+    <record id="view_partner_form" model="ir.ui.view">
+        <field name="name">res.partner.form.aml</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <!-- Add CRA score display after category_id -->
+            <field name="category_id" position="after">
+                <field name="risk_level" widget="badge"
+                       decoration-success="risk_level == 'low'"
+                       decoration-warning="risk_level == 'medium'"
+                       decoration-danger="risk_level == 'high'"
+                       string="Risk Level"/>
+                <field name="residual_risk" string="Risk Score"/>
+            </field>
+
+            <!-- Add smart buttons for screenings and alerts -->
+            <div name="button_box" position="inside">
+                <button name="%(nexaml.action_screening)d"
+                        type="action"
+                        class="oe_stat_button"
+                        icon="fa-shield"
+                        context="{'default_partner_id': id, 'search_default_partner_id': id}"
+                        invisible="screening_count == 0">
+                    <field name="screening_count" widget="statinfo" string="Screenings"/>
+                </button>
+                <button name="%(nexaml.action_alert)d"
+                        type="action"
+                        class="oe_stat_button"
+                        icon="fa-bell"
+                        context="{'default_partner_id': id, 'search_default_partner_id': id}"
+                        invisible="alert_count == 0">
+                    <field name="alert_count" widget="statinfo" string="Alerts"/>
+                </button>
+            </div>
+
+            <!-- Add NexAML tab -->
+            <notebook position="inside">
+                <page string="NexAML" name="nexaml">
+                    <!-- Summary Section -->
+                    <group name="summary_section">
+                        <group string="Risk Summary" colspan="2">
+                            <group>
+                                <field name="risk_level" widget="badge"
+                                       decoration-success="risk_level == 'low'"
+                                       decoration-warning="risk_level == 'medium'"
+                                       decoration-danger="risk_level == 'high'"/>
+                                <field name="inherent_risk" string="Inherent Risk (1.0-3.0)"/>
+                                <field name="residual_risk" string="Residual Risk (1.0-3.0)"/>
+                            </group>
+                            <group>
+                                <field name="edd_required" widget="boolean_toggle" string="EDD Required"/>
+                                <field name="pep_status" widget="boolean_toggle" string="PEP Status"/>
+                                <field name="last_assessment_date"/>
+                                <field name="next_review_date"/>
+                            </group>
+                        </group>
+                    </group>
+
+                    <!-- Actions -->
+                    <div class="oe_button_box" name="nexaml_actions" style="margin: 10px 0;">
+                        <button name="action_assess_risk"
+                                string="Calculate Risk"
+                                type="object"
+                                class="btn-primary"
+                                icon="fa-calculator"
+                                style="margin-right: 5px;"/>
+                        <button name="action_screen_sanctions"
+                                string="Screen for Sanctions"
+                                type="object"
+                                class="btn-secondary"
+                                icon="fa-search"/>
+                    </div>
+
+                    <!-- Risk Components (30/20/30/20 formula) -->
+                    <separator string="Risk Components" colspan="4"/>
+                    <group string="Inherent Risk Calculation: (Customer × 30%) + (Geography × 20%) + (Product × 30%) + (Channel × 20%)">
+                        <group string="Component Scores">
+                            <field name="customer_risk" widget="radio" string="Customer (30%)"/>
+                            <field name="geography_risk" widget="radio" string="Geography (20%)"/>
+                            <field name="product_risk" widget="radio" string="Product (30%)"/>
+                            <field name="channel_risk" widget="radio" string="Channel (20%)"/>
+                        </group>
+                        <group string="Risk Levels">
+                            <div class="o_form_label text-success">Low: 1.0-1.6</div>
+                            <div class="o_form_label text-warning">Medium: 1.7-2.3</div>
+                            <div class="o_form_label text-danger">High: 2.4-3.0</div>
+                        </group>
+                    </group>
+
+                    <!-- Products & Services -->
+                    <separator string="Products &amp; Services" colspan="4"/>
+                    <field name="product_ids" widget="many2many_tags" placeholder="Select products/services used by customer" nolabel="1"/>
+
+                    <!-- Controls & Mitigations -->
+                    <separator string="Controls &amp; Mitigations" colspan="4"/>
+                    <group>
+                        <field name="control_ids" widget="many2many_tags" placeholder="Select risk controls applied" nolabel="1"/>
+                        <div class="o_form_label text-muted">Controls reduce inherent risk to calculate residual risk</div>
+                    </group>
+
+                    <!-- Sanctions Screening -->
+                    <separator string="Sanctions Screening" colspan="4"/>
+                    <group>
+                        <group>
+                            <field name="sanctions_status" widget="badge"
+                                   decoration-muted="sanctions_status == 'not_screened'"
+                                   decoration-success="sanctions_status == 'clear'"
+                                   decoration-danger="sanctions_status == 'match'"
+                                   decoration-info="sanctions_status == 'pending'"
+                                   string="Screening Status"/>
+                            <field name="last_screening_date" string="Last Screened"/>
+                        </group>
+                        <group>
+                            <field name="screening_count" string="Total Screenings"/>
+                        </group>
+                    </group>
+                </page>
+
+                <!-- Related Party Information (for contacts only) -->
+                <page string="Related Party Info" name="related_party" invisible="not parent_id" groups="base.group_no_one">
+                    <group string="Party Details">
+                        <group>
+                            <field name="party_type" widget="radio" options="{'horizontal': true}" optional="show"/>
+                            <field name="ownership_percentage" invisible="party_type not in ('shareholder', 'ubo')" optional="show"/>
+                            <field name="is_ubo" invisible="party_type not in ('shareholder', 'ubo')" optional="show"/>
+                        </group>
+                        <group>
+                            <field name="pep_status" widget="boolean_toggle" optional="show"/>
+                            <field name="sanctions_status" widget="badge"
+                                   decoration-muted="sanctions_status == 'not_screened'"
+                                   decoration-success="sanctions_status == 'clear'"
+                                   decoration-danger="sanctions_status == 'match'"
+                                   decoration-info="sanctions_status == 'pending'"
+                                   optional="show"/>
+                            <field name="last_screening_date" optional="show"/>
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+    <!-- Extend Partner List/Tree View -->
+    <record id="view_partner_tree_aml" model="ir.ui.view">
+        <field name="name">res.partner.tree.aml</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <field name="email" position="after">
+                <field name="risk_level" widget="badge"
+                       decoration-success="risk_level == 'low'"
+                       decoration-warning="risk_level == 'medium'"
+                       decoration-danger="risk_level == 'high'"
+                       optional="show"/>
+                <field name="residual_risk" optional="hide"/>
+                <field name="edd_required" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Extend Product Template Form with AML Risk -->
+    <record id="view_product_template_form_aml" model="ir.ui.view">
+        <field name="name">product.template.form.aml</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page string="Risk" name="risk">
+                    <group>
+                        <field name="risk_score" widget="radio"/>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+    <!-- Control Views -->
+    <record id="view_control_tree" model="ir.ui.view">
+        <field name="name">aml.control.tree</field>
+        <field name="model">aml.control</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="mitigation_factor"/>
+                <field name="description"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_control_form" model="ir.ui.view">
+        <field name="name">aml.control.form</field>
+        <field name="model">aml.control</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+                        </button>
+                    </div>
+                    <group>
+                        <field name="name"/>
+                        <field name="mitigation_factor"/>
+                        <field name="description"/>
+                    </group>
+                    <notebook>
+                        <page string="Applied To Customers" name="customers">
+                            <field name="partner_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="risk_level" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_control" model="ir.actions.act_window">
+        <field name="name">Controls</field>
+        <field name="res_model">aml.control</field>
+        <field name="view_mode">list,form</field>
+        <field name="path">nexaml-control</field>
+    </record>
+</odoo>

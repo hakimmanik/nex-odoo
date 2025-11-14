@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_aml_control_user,access.aml.control.user,model_aml_control,base.group_user,1,1,1,1
+access_aml_screening_user,access.aml.screening.user,model_aml_screening,base.group_user,1,1,1,1
+access_aml_transaction_rule_user,access.aml.transaction.rule.user,model_aml_transaction_rule,base.group_user,1,1,1,1
+access_aml_alert_user,access.aml.alert.user,model_aml_alert,base.group_user,1,1,1,1
+access_aml_case_user,access.aml.case.user,model_aml_case,base.group_user,1,1,1,1
+access_report_wizard_user,access.report.wizard.user,model_report_wizard,base.group_user,1,1,1,1

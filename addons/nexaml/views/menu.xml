@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main Menu -->
+    <menuitem id="menu_nexaml_root"
+              name="NexAML"
+              sequence="50"
+              web_icon="nexaml,static/description/icon.png"/>
+
+    <!-- Operations Menu -->
+    <menuitem id="menu_operations"
+              name="Operations"
+              parent="menu_nexaml_root"
+              sequence="10"/>
+
+    <menuitem id="menu_cases"
+              name="Cases"
+              parent="menu_operations"
+              sequence="1"
+              action="action_case"/>
+
+    <menuitem id="menu_alerts"
+              name="Alerts"
+              parent="menu_operations"
+              sequence="2"
+              action="action_alert"/>
+
+    <menuitem id="menu_screenings"
+              name="Screenings"
+              parent="menu_operations"
+              sequence="3"
+              action="action_screening"/>
+
+    <!-- Reporting Menu -->
+    <menuitem id="menu_reporting"
+              name="Reporting"
+              parent="menu_nexaml_root"
+              sequence="50"/>
+
+    <menuitem id="menu_generate_report"
+              name="Generate Report"
+              parent="menu_reporting"
+              sequence="1"
+              action="action_report_wizard"/>
+
+    <!-- Configuration Menu -->
+    <menuitem id="menu_configuration"
+              name="Configuration"
+              parent="menu_nexaml_root"
+              sequence="90"/>
+
+    <menuitem id="menu_transaction_rules"
+              name="Transaction Rules"
+              parent="menu_configuration"
+              sequence="1"
+              action="action_transaction_rule"/>
+
+    <menuitem id="menu_controls"
+              name="Controls"
+              parent="menu_configuration"
+              sequence="2"
+              action="action_control"/>
+
+</odoo>

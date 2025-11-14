@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Screening Tree View -->
+    <record id="view_screening_tree" model="ir.ui.view">
+        <field name="name">aml.screening.tree</field>
+        <field name="model">aml.screening</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="screening_type"/>
+                <field name="screening_date"/>
+                <field name="status" widget="badge"
+                       decoration-muted="status == 'pending'"
+                       decoration-success="status == 'clear' or status == 'false_positive'"
+                       decoration-danger="status == 'match'"/>
+                <field name="match_score"/>
+                <field name="matched_name"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Screening Form View -->
+    <record id="view_screening_form" model="ir.ui.view">
+        <field name="name">aml.screening.form</field>
+        <field name="model">aml.screening</field>
+        <field name="arch" type="xml">
+            <form disable_autofocus="True">
+                <header>
+                    <button name="action_mark_false_positive"
+                            string="Mark as False Positive"
+                            type="object"
+                            class="btn-warning"
+                            invisible="status == 'false_positive'"/>
+                    <field name="status" widget="statusbar" statusbar_visible="pending,clear,match"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_review"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-search">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Review</span>
+                            </div>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Match Found" bg_color="text-bg-danger" invisible="status != 'match'"/>
+                    <widget name="web_ribbon" title="False Positive" bg_color="text-bg-warning" invisible="status != 'false_positive'"/>
+                    <div class="oe_title">
+                        <label for="name" string="Screening"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Screening Information">
+                            <field name="partner_id"/>
+                            <field name="screening_type"/>
+                            <field name="screening_date"/>
+                            <field name="status" widget="badge"
+                                   decoration-muted="status == 'pending'"
+                                   decoration-success="status in ['clear', 'false_positive']"
+                                   decoration-danger="status == 'match'"/>
+                        </group>
+                        <group string="Match Details">
+                            <field name="match_score" widget="percentage"/>
+                            <field name="matched_name"/>
+                            <field name="matched_entity_id"/>
+                        </group>
+                    </group>
+                    <group string="Matched Information">
+                        <field name="matched_countries"/>
+                        <field name="matched_datasets"/>
+                    </group>
+                    <group string="Review Information" invisible="not reviewed_by">
+                        <group>
+                            <field name="reviewed_by"/>
+                            <field name="review_date"/>
+                        </group>
+                        <group>
+                            <field name="review_notes"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Raw Data" name="raw_data">
+                            <field name="screening_data" widget="text"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter>
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </chatter>
+            </form>
+        </field>
+    </record>
+
+    <!-- Screening Search View -->
+    <record id="view_screening_search" model="ir.ui.view">
+        <field name="name">aml.screening.search</field>
+        <field name="model">aml.screening</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id" filter_domain="[('partner_id', 'ilike', self)]"/>
+                <field name="matched_name" filter_domain="[('matched_name', 'ilike', self)]"/>
+                <field name="matched_entity_id"/>
+                <separator/>
+                <filter string="Matches" name="filter_matches"
+                        domain="[('status', '=', 'match')]"/>
+                <filter string="Pending Review" name="filter_pending"
+                        domain="[('status', '=', 'pending')]"/>
+                <filter string="Clear" name="filter_clear"
+                        domain="[('status', '=', 'clear')]"/>
+                <filter string="False Positives" name="filter_false_positives"
+                        domain="[('status', '=', 'false_positive')]"/>
+                <separator/>
+                <filter string="Sanctions" name="filter_sanctions"
+                        domain="[('screening_type', '=', 'sanctions')]"/>
+                <filter string="PEP Screening" name="filter_pep"
+                        domain="[('screening_type', '=', 'pep')]"/>
+                <group>
+                    <filter string="Customer" name="group_partner"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter string="Status" name="group_status"
+                            context="{'group_by': 'status'}"/>
+                    <filter string="Screening Type" name="group_type"
+                            context="{'group_by': 'screening_type'}"/>
+                    <filter string="Screening Date" name="group_date"
+                            context="{'group_by': 'screening_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Screening Action -->
+    <record id="action_screening" model="ir.actions.act_window">
+        <field name="name">Sanctions Screenings</field>
+        <field name="res_model">aml.screening</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="path">nexaml-screening</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No screening records yet
+            </p>
+            <p>
+                Screen customers against sanctions lists using the "Screen Now" button on customer forms.
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,53 +1,72 @@
-# sphinx build directories
-_build/
-
-# dotfiles
-.*
-!.gitignore
-!.gitkeep
-!.github
-!.mailmap
-!.weblate.json
-# compiled python files
-*.py[co]
+# Byte-compiled / optimized / DLL files
 __pycache__/
-# setup.py egg_info
-*.egg-info
-# emacs backup files
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Odoo
+filestore/
+sessions/
+addons/*/static/description/icon.png
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
 *~
-# hg stuff
-*.orig
-status
-# odoo filestore
-odoo/filestore
-# maintenance migration scripts
-odoo/addons/base/maintenance
-# windows installation config file
-/odoo.conf
+.project
+.pydevproject
+.settings/
 
-# generated for windows installer?
-install/win32/*.bat
-install/win32/meta.py
+# OS
+.DS_Store
+Thumbs.db
 
-# needed only when building for win32
-setup/win32/static/less/
-setup/win32/static/wkhtmltopdf/
-setup/win32/static/postgresql*.exe
+# Docker
+.env
 
-# js tooling
-node_modules
-jsconfig.json
-tsconfig.json
-package-lock.json
-package.json
-.husky
+# Backups
+*.sql
+*.dump
+*.backup
 
-# various virtualenv
-/bin/
-/build/
-/dist/
-/include/
-/lib/
-/man/
-/share/
-/src/
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+nex-systems

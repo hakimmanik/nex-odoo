@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Transaction Rule Views -->
+    <record id="view_transaction_rule_tree" model="ir.ui.view">
+        <field name="name">aml.transaction.rule.tree</field>
+        <field name="model">aml.transaction.rule</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="rule_type"/>
+                <field name="alert_severity" widget="badge"/>
+                <field name="applies_to_risk_level"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_transaction_rule_form" model="ir.ui.view">
+        <field name="name">aml.transaction.rule.form</field>
+        <field name="model">aml.transaction.rule</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name" string="Rule Name"/>
+                        <h1><field name="name" placeholder="e.g. High Value Transaction"/></h1>
+                    </div>
+                    <group>
+                        <group string="Rule Configuration">
+                            <field name="code"/>
+                            <field name="sequence"/>
+                            <field name="rule_type" widget="radio"/>
+                        </group>
+                        <group string="Alert Settings">
+                            <field name="alert_severity" widget="badge"
+                                   decoration-info="alert_severity == 'low'"
+                                   decoration-warning="alert_severity == 'medium'"
+                                   decoration-danger="alert_severity in ['high', 'critical']"/>
+                            <field name="applies_to_risk_level"/>
+                        </group>
+                    </group>
+                    <group string="Rule Configuration" invisible="rule_type not in ['threshold', 'velocity', 'pattern']">
+                        <group string="Threshold Settings" invisible="rule_type != 'threshold'">
+                            <field name="currency_id" invisible="1"/>
+                            <field name="amount_threshold" widget="monetary"/>
+                        </group>
+                        <group string="Velocity Settings" invisible="rule_type != 'velocity'">
+                            <field name="period_days"/>
+                            <field name="transaction_count"/>
+                            <field name="velocity_amount" widget="monetary"/>
+                        </group>
+                        <group string="Pattern Settings" invisible="rule_type != 'pattern'" colspan="2">
+                            <field name="domain_filter" widget="domain" options="{'model': 'account.move'}"/>
+                        </group>
+                    </group>
+                    <group string="Alert Configuration">
+                        <field name="alert_message" placeholder="Custom alert message (optional)"/>
+                        <field name="description" placeholder="Rule description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Alert Views -->
+    <record id="view_alert_tree" model="ir.ui.view">
+        <field name="name">aml.alert.tree</field>
+        <field name="model">aml.alert</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="severity == 'critical'"
+                  decoration-warning="severity == 'high'"
+                  decoration-info="severity == 'medium'">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="rule_id"/>
+                <field name="alert_date"/>
+                <field name="severity" widget="badge"
+                       decoration-muted="severity == 'low'"
+                       decoration-info="severity == 'medium'"
+                       decoration-warning="severity == 'high'"
+                       decoration-danger="severity == 'critical'"/>
+                <field name="status" widget="badge"
+                       decoration-info="status == 'new'"
+                       decoration-warning="status == 'investigating'"
+                       decoration-success="status == 'closed'"
+                       decoration-muted="status == 'escalated'"/>
+                <field name="triggered_value"/>
+                <field name="alert_reason"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_alert_form" model="ir.ui.view">
+        <field name="name">aml.alert.form</field>
+        <field name="model">aml.alert</field>
+        <field name="arch" type="xml">
+            <form disable_autofocus="True">
+                <header>
+                    <button name="action_assign"
+                            string="Assign to Me"
+                            type="object"
+                            class="btn-primary"
+                            invisible="status != 'generated'"/>
+                    <button name="action_start_review"
+                            string="Start Review"
+                            type="object"
+                            class="btn-primary"
+                            invisible="status not in ['generated', 'assigned']"/>
+                    <button name="action_resolve_cleared"
+                            string="Resolve - Cleared"
+                            type="object"
+                            class="btn-success"
+                            invisible="status not in ['under_review', 'assigned']"/>
+                    <button name="action_resolve_true_positive"
+                            string="Resolve - True Positive"
+                            type="object"
+                            class="btn-warning"
+                            invisible="status not in ['under_review', 'assigned']"/>
+                    <button name="action_resolve_false_positive"
+                            string="Resolve - False Positive"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="status not in ['under_review', 'assigned']"/>
+                    <button name="action_escalate_to_case"
+                            string="Escalate to Case"
+                            type="object"
+                            class="btn-danger"
+                            invisible="status in ['escalated', 'resolved_cleared', 'resolved_true_positive', 'resolved_false_positive']"/>
+                    <field name="status" widget="statusbar" statusbar_visible="generated,assigned,under_review,escalated"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Escalated" bg_color="text-bg-warning" invisible="status != 'escalated'"/>
+                    <div class="oe_title">
+                        <label for="name" string="Alert"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Alert Information">
+                            <field name="partner_id"/>
+                            <field name="move_id"/>
+                            <field name="rule_id"/>
+                            <field name="case_id" invisible="not case_id"/>
+                        </group>
+                        <group string="Severity &amp; Timing">
+                            <field name="alert_date"/>
+                            <field name="severity" widget="badge"
+                                   decoration-info="severity == 'low'"
+                                   decoration-warning="severity == 'medium'"
+                                   decoration-danger="severity in ['high', 'critical']"/>
+                            <field name="triggered_value"/>
+                        </group>
+                    </group>
+                    <group string="Alert Details">
+                        <field name="alert_reason" nolabel="1"/>
+                        <field name="alert_details" nolabel="1"/>
+                    </group>
+                    <group string="Review Information" invisible="not reviewed_by">
+                        <group>
+                            <field name="reviewed_by"/>
+                            <field name="reviewed_date"/>
+                        </group>
+                        <group>
+                            <field name="review_notes"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter>
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </chatter>
+            </form>
+        </field>
+    </record>
+
+    <!-- Alert Search View -->
+    <record id="view_alert_search" model="ir.ui.view">
+        <field name="name">aml.alert.search</field>
+        <field name="model">aml.alert</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id" filter_domain="[('partner_id', 'ilike', self)]"/>
+                <field name="rule_id"/>
+                <field name="move_id"/>
+                <separator/>
+                <filter string="Generated" name="filter_generated"
+                        domain="[('status', '=', 'generated')]"/>
+                <filter string="Assigned" name="filter_assigned"
+                        domain="[('status', '=', 'assigned')]"/>
+                <filter string="Under Review" name="filter_under_review"
+                        domain="[('status', '=', 'under_review')]"/>
+                <filter string="Escalated" name="filter_escalated"
+                        domain="[('status', '=', 'escalated')]"/>
+                <filter string="Resolved" name="filter_resolved"
+                        domain="[('status', 'in', ['resolved_cleared', 'resolved_true_positive', 'resolved_false_positive'])]"/>
+                <separator/>
+                <filter string="Critical" name="filter_critical"
+                        domain="[('severity', '=', 'critical')]"/>
+                <filter string="High Severity" name="filter_high"
+                        domain="[('severity', '=', 'high')]"/>
+                <filter string="Medium &amp; Above" name="filter_medium_up"
+                        domain="[('severity', 'in', ['medium', 'high', 'critical'])]"/>
+                <separator/>
+                <filter string="Today" name="filter_today"
+                        domain="[('alert_date', '&gt;=', context_today())]"/>
+                <group>
+                    <filter string="Customer" name="group_partner"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter string="Severity" name="group_severity"
+                            context="{'group_by': 'severity'}"/>
+                    <filter string="Status" name="group_status"
+                            context="{'group_by': 'status'}"/>
+                    <filter string="Rule" name="group_rule"
+                            context="{'group_by': 'rule_id'}"/>
+                    <filter string="Alert Date" name="group_date"
+                            context="{'group_by': 'alert_date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_alert_kanban" model="ir.ui.view">
+        <field name="name">aml.alert.kanban</field>
+        <field name="model">aml.alert</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="status">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="rule_id"/>
+                <field name="severity"/>
+                <field name="status"/>
+                <field name="alert_date"/>
+                <progressbar field="severity" colors='{"low": "success", "medium": "warning", "high": "danger", "critical": "danger"}'/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click">
+                            <div class="row g-0">
+                                <div class="col-9">
+                                    <strong><field name="name"/></strong>
+                                    <div><field name="partner_id"/></div>
+                                    <div class="text-muted"><small><field name="rule_id"/></small></div>
+                                </div>
+                                <div class="col-3 text-end">
+                                    <field name="severity" widget="badge"
+                                           decoration-success="severity == 'low'"
+                                           decoration-warning="severity == 'medium'"
+                                           decoration-danger="severity in ('high', 'critical')"/>
+                                </div>
+                            </div>
+                            <div class="row g-0 mt-2">
+                                <div class="col-12 text-muted">
+                                    <small><field name="alert_date" widget="date"/></small>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Case Search View -->
+    <record id="view_case_search" model="ir.ui.view">
+        <field name="name">aml.case.search</field>
+        <field name="model">aml.case</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id" filter_domain="[('partner_id', 'ilike', self)]"/>
+                <field name="assigned_to"/>
+                <separator/>
+                <filter string="My Cases" name="filter_my_cases"
+                        domain="[('assigned_to', '=', uid)]"/>
+                <filter string="Unassigned" name="filter_unassigned"
+                        domain="[('assigned_to', '=', False)]"/>
+                <separator/>
+                <filter string="Open" name="filter_open"
+                        domain="[('state', '=', 'open')]"/>
+                <filter string="Investigating" name="filter_investigating"
+                        domain="[('state', '=', 'investigating')]"/>
+                <filter string="Under Review" name="filter_under_review"
+                        domain="[('state', '=', 'under_review')]"/>
+                <filter string="Pending Info" name="filter_pending_info"
+                        domain="[('state', '=', 'pending_info')]"/>
+                <filter string="Resolved" name="filter_resolved"
+                        domain="[('state', 'in', ['resolved_approved', 'resolved_rejected'])]"/>
+                <separator/>
+                <filter string="Critical Priority" name="filter_critical"
+                        domain="[('priority', '=', 'critical')]"/>
+                <filter string="High Priority" name="filter_high"
+                        domain="[('priority', '=', 'high')]"/>
+                <separator/>
+                <filter string="Active Cases" name="filter_active"
+                        domain="[('state', 'not in', ['closed', 'resolved_approved', 'resolved_rejected'])]"/>
+                <group>
+                    <filter string="Assigned To" name="group_assigned"
+                            context="{'group_by': 'assigned_to'}"/>
+                    <filter string="State" name="group_state"
+                            context="{'group_by': 'state'}"/>
+                    <filter string="Priority" name="group_priority"
+                            context="{'group_by': 'priority'}"/>
+                    <filter string="Case Type" name="group_case_type"
+                            context="{'group_by': 'case_type'}"/>
+                    <filter string="Customer" name="group_partner"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter string="Opened Date" name="group_opened_date"
+                            context="{'group_by': 'opened_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Case Views -->
+    <record id="view_case_tree" model="ir.ui.view">
+        <field name="name">aml.case.tree</field>
+        <field name="model">aml.case</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="priority == 'critical'"
+                  decoration-warning="priority == 'high'">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="case_type"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'open'"
+                       decoration-warning="state in ['investigating', 'under_review', 'pending_info']"
+                       decoration-success="state in ['resolved_approved', 'resolved_rejected']"
+                       decoration-muted="state == 'closed'"/>
+                <field name="priority" widget="badge"/>
+                <field name="assigned_to"/>
+                <field name="opened_date"/>
+                <field name="alert_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_case_form" model="ir.ui.view">
+        <field name="name">aml.case.form</field>
+        <field name="model">aml.case</field>
+        <field name="arch" type="xml">
+            <form string="AML Case" disable_autofocus="True">
+                <header>
+                    <button name="action_investigate"
+                            string="Start Investigation"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="state != 'open'"/>
+                    <button name="action_review"
+                            string="Move to Review"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="state != 'investigating'"/>
+                    <button name="action_resolve"
+                            string="Resolve"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="state not in ['investigating', 'under_review']"/>
+                    <button name="action_close"
+                            string="Close Case"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state not in ['resolved_approved', 'resolved_rejected']"/>
+                    <field name="state" widget="statusbar" statusbar_visible="open,investigating,under_review,resolved_approved,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_alerts" type="object" class="oe_stat_button" icon="fa-bell"
+                                invisible="alert_count == 0">
+                            <field name="alert_count" widget="statinfo" string="Alerts"/>
+                        </button>
+                        <button name="action_view_transactions" type="object" class="oe_stat_button" icon="fa-file-text-o"
+                                invisible="move_count == 0">
+                            <field name="move_count" widget="statinfo" string="Transactions"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Closed" bg_color="text-bg-secondary" invisible="state != 'closed'"/>
+                    <widget name="web_ribbon" title="Resolved - Approved" bg_color="text-bg-success" invisible="state != 'resolved_approved'"/>
+                    <widget name="web_ribbon" title="Resolved - Rejected" bg_color="text-bg-danger" invisible="state != 'resolved_rejected'"/>
+                    <div class="oe_title">
+                        <label for="name" string="Case Number"/>
+                        <h1><field name="name" placeholder="e.g. CASE/2025/001" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Case Details">
+                            <field name="partner_id"/>
+                            <field name="case_type"/>
+                            <field name="priority" widget="priority"/>
+                        </group>
+                        <group string="Assignment &amp; Dates">
+                            <field name="assigned_to" widget="many2one_avatar_user"/>
+                            <field name="opened_date"/>
+                            <field name="closed_date" invisible="not closed_date"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Details" name="details">
+                            <group>
+                                <field name="description" placeholder="Describe the case details and reason for investigation..."/>
+                            </group>
+                            <separator string="Investigation Notes"/>
+                            <field name="investigation_notes" placeholder="Add investigation findings and notes here..."/>
+                        </page>
+                        <page string="Alerts" name="alerts">
+                            <field name="alert_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="rule_id"/>
+                                    <field name="severity" widget="badge"/>
+                                    <field name="status" widget="badge"/>
+                                    <field name="alert_date"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Transactions" name="transactions">
+                            <field name="move_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="move_type"/>
+                                    <field name="amount_total"/>
+                                    <field name="risk_score"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Resolution" name="resolution" invisible="state not in ['under_review', 'resolved_approved', 'resolved_rejected', 'closed']">
+                            <group>
+                                <group string="Decision">
+                                    <field name="case_type" invisible="1"/>
+                                    <field name="decision" widget="radio"
+                                           required="state in ['resolved_approved', 'resolved_rejected', 'closed']"
+                                           options="{'horizontal': true}"/>
+                                </group>
+                                <group string="Action Taken">
+                                    <field name="action_taken"
+                                           required="state in ['resolved_approved', 'resolved_rejected', 'closed']"/>
+                                </group>
+                            </group>
+                            <separator string="Resolution Notes"/>
+                            <field name="resolution_notes" placeholder="Describe the resolution, decision rationale, and actions taken..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter>
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </chatter>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_case_kanban" model="ir.ui.view">
+        <field name="name">aml.case.kanban</field>
+        <field name="model">aml.case</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state">
+                <field name="state"/>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="case_type"/>
+                <field name="priority"/>
+                <field name="assigned_to"/>
+                <field name="alert_count"/>
+                <progressbar field="priority" colors='{"low": "success", "medium": "info", "high": "warning", "critical": "danger"}'/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click">
+                            <div class="row g-0">
+                                <div class="col-10">
+                                    <strong>
+                                        <field name="priority" widget="priority"/>
+                                        <field name="name"/>
+                                    </strong>
+                                    <div><field name="partner_id"/></div>
+                                    <div class="text-muted"><small><field name="case_type"/></small></div>
+                                </div>
+                            </div>
+                            <div class="row g-0 mt-2">
+                                <div class="col-6">
+                                    <field name="assigned_to" widget="many2one_avatar_user"/>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <span class="badge text-bg-secondary" t-if="record.alert_count.raw_value">
+                                        <field name="alert_count"/> alerts
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_transaction_rule" model="ir.actions.act_window">
+        <field name="name">Transaction Rules</field>
+        <field name="res_model">aml.transaction.rule</field>
+        <field name="view_mode">list,form</field>
+        <field name="path">nexaml-transaction-rule</field>
+    </record>
+
+    <record id="action_alert" model="ir.actions.act_window">
+        <field name="name">Alerts</field>
+        <field name="res_model">aml.alert</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="context">{}</field>
+        <field name="path">nexaml-alert</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No alerts yet
+            </p>
+            <p>
+                Alerts are automatically generated when transaction rules are triggered.
+                Configure transaction rules in Configuration menu.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_case" model="ir.actions.act_window">
+        <field name="name">Cases</field>
+        <field name="res_model">aml.case</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="context">{}</field>
+        <field name="path">nexaml-case</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No cases yet
+            </p>
+            <p>
+                Cases are created when alerts are escalated for investigation.
+                Create a case manually or escalate an alert from the Alerts view.
+            </p>
+        </field>
+    </record>
+</odoo>
