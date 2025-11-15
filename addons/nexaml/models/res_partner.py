@@ -164,6 +164,75 @@ class ResPartner(models.Model):
         help='Number of active alerts'
     )
 
+    # Employment & Financial Information (for natural persons)
+    occupation = fields.Char(
+        string='Occupation',
+        help='Customer occupation/profession'
+    )
+    employer_name = fields.Char(
+        string='Employer Name',
+        help='Name of employer'
+    )
+    employer_address = fields.Text(
+        string='Employer Address',
+        help='Address of employer'
+    )
+    source_of_funds = fields.Selection(
+        [('salary', 'Salary/Wages'),
+         ('business', 'Business Income'),
+         ('investment', 'Investment Income'),
+         ('inheritance', 'Inheritance'),
+         ('savings', 'Savings'),
+         ('pension', 'Pension/Retirement'),
+         ('gift', 'Gift/Donation'),
+         ('other', 'Other')],
+        string='Source of Funds',
+        help='Primary source of funds'
+    )
+    source_of_funds_other = fields.Char(
+        string='Other Source',
+        help='Specify if source is "Other"'
+    )
+    annual_income_range = fields.Selection(
+        [('0-25k', 'Under $25,000'),
+         ('25k-50k', '$25,000 - $50,000'),
+         ('50k-100k', '$50,000 - $100,000'),
+         ('100k-250k', '$100,000 - $250,000'),
+         ('250k-500k', '$250,000 - $500,000'),
+         ('500k-1m', '$500,000 - $1,000,000'),
+         ('1m+', 'Over $1,000,000')],
+        string='Annual Income Range',
+        help='Estimated annual income range'
+    )
+
+    # Compliance Flags
+    kyc_expiry_date = fields.Date(
+        string='KYC Expiry Date',
+        help='Date when KYC/CDD documentation expires'
+    )
+    kyc_expired = fields.Boolean(
+        string='KYC Expired',
+        compute='_compute_kyc_expired',
+        store=True,
+        help='Whether KYC documentation has expired'
+    )
+    on_watch_list = fields.Boolean(
+        string='On Watch List',
+        default=False,
+        help='Customer is on internal watch list'
+    )
+    watch_list_reason = fields.Text(
+        string='Watch List Reason',
+        help='Reason for watch list placement'
+    )
+
+    @api.depends('kyc_expiry_date')
+    def _compute_kyc_expired(self):
+        """Check if KYC has expired."""
+        today = fields.Date.today()
+        for partner in self:
+            partner.kyc_expired = partner.kyc_expiry_date and partner.kyc_expiry_date < today
+
     @api.depends('ownership_percentage')
     def _compute_is_ubo(self):
         """Compute if contact is UBO based on ownership percentage."""
@@ -276,7 +345,14 @@ class ResPartner(models.Model):
                     if resolved_cases:
                         case = resolved_cases[0]
                         # If decision is not false positive, it's a confirmed match
-                        if case.decision != 'false_positive':
+                        # Check latest decision outcome
+                        if case.decision_ids:
+                            latest_decision = case.decision_ids.sorted('decided_date', reverse=True)[0]
+                            if latest_decision.outcome != 'false_positive':
+                                override_high = True
+                                override_reason.append('Confirmed sanctions match')
+                        else:
+                            # No decisions recorded - assume confirmed match
                             override_high = True
                             override_reason.append('Confirmed sanctions match')
 

@@ -2,6 +2,7 @@
 # Part of NexAML. See LICENSE file for full copyright and licensing details.
 
 import logging
+from datetime import timedelta
 
 from odoo import api, fields, models, _
 
@@ -96,6 +97,52 @@ class Case(models.Model):
         help='Number of related transactions'
     )
 
+    # Case Management
+    decision_ids = fields.One2many(
+        'aml.case.decision',
+        'case_id',
+        string='Decisions',
+        help='Case decisions'
+    )
+    decision_count = fields.Integer(
+        string='Decision Count',
+        compute='_compute_decision_count',
+        help='Number of decisions'
+    )
+    timeline_ids = fields.One2many(
+        'aml.case.timeline',
+        'case_id',
+        string='Timeline',
+        help='Case timeline events'
+    )
+    timeline_count = fields.Integer(
+        string='Timeline Events',
+        compute='_compute_timeline_count',
+        help='Number of timeline events'
+    )
+    note_ids = fields.One2many(
+        'aml.case.note',
+        'case_id',
+        string='Notes',
+        help='Investigation notes'
+    )
+    note_count = fields.Integer(
+        string='Note Count',
+        compute='_compute_note_count',
+        help='Number of notes'
+    )
+    task_ids = fields.One2many(
+        'aml.case.task',
+        'case_id',
+        string='Tasks',
+        help='Case tasks'
+    )
+    task_count = fields.Integer(
+        string='Task Count',
+        compute='_compute_task_count',
+        help='Number of tasks'
+    )
+
     # Assignment
     assigned_to = fields.Many2one(
         'res.users',
@@ -117,6 +164,23 @@ class Case(models.Model):
         help='When the case was closed'
     )
 
+    # SLA Tracking
+    sla_due_date = fields.Datetime(
+        string='SLA Due Date',
+        compute='_compute_sla_due_date',
+        help='Date by which case should be resolved based on SLA'
+    )
+    is_overdue = fields.Boolean(
+        string='Overdue',
+        compute='_compute_overdue',
+        help='Whether case has exceeded SLA'
+    )
+    days_overdue = fields.Integer(
+        string='Days Overdue',
+        compute='_compute_overdue',
+        help='Number of days past SLA'
+    )
+
     # Investigation Details
     description = fields.Text(
         string='Description',
@@ -127,74 +191,12 @@ class Case(models.Model):
         help='Detailed notes from investigation'
     )
 
-    # Decision (dynamic based on case type)
-    decision = fields.Selection(
-        selection='_get_decision_selection',
-        string='Decision',
-        tracking=True,
-        help='Decision made after investigation'
-    )
-
-    # Action Taken (dynamic based on decision)
-    action_taken = fields.Selection(
-        [('no_action', 'No Action Required'),
-         ('customer_contacted', 'Customer Contacted'),
-         ('enhanced_due_diligence', 'Enhanced Due Diligence'),
-         ('sar_filed', 'SAR Filed'),
-         ('transaction_blocked', 'Transaction Blocked'),
-         ('relationship_terminated', 'Relationship Terminated'),
-         ('reported_to_authorities', 'Reported to Authorities'),
-         ('ongoing_monitoring', 'Ongoing Monitoring'),
-         ('other', 'Other')],
-        string='Action Taken',
-        tracking=True,
-        help='Action taken based on the decision'
-    )
-
-    resolution_notes = fields.Text(
-        string='Resolution Notes',
-        tracking=True,
-        help='Notes about the resolution'
-    )
-
     company_id = fields.Many2one(
         'res.company',
         string='Company',
         default=lambda self: self.env.company,
         help='Company'
     )
-
-    @api.model
-    def _get_decision_selection(self):
-        """Return decision options based on case type."""
-        # Get case_type from context or self
-        case_type = self._context.get('default_case_type') or (self.case_type if self else False)
-
-        if case_type == 'screening':
-            return [
-                ('confirmed_match', 'Confirmed Match'),
-                ('potential_match', 'Potential Match'),
-                ('false_positive', 'False Positive'),
-            ]
-        elif case_type == 'transaction':
-            return [
-                ('legitimate', 'Legitimate Transaction'),
-                ('suspicious', 'Suspicious - Requires Monitoring'),
-                ('escalate', 'Escalate to SAR'),
-                ('false_positive', 'False Positive'),
-            ]
-        elif case_type == 'risk':
-            return [
-                ('risk_accepted', 'Risk Accepted'),
-                ('risk_mitigated', 'Risk Mitigated'),
-                ('risk_rejected', 'Risk Rejected - Terminate'),
-            ]
-        else:
-            return [
-                ('approved', 'Approved'),
-                ('rejected', 'Rejected'),
-                ('requires_further_review', 'Requires Further Review'),
-            ]
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -206,83 +208,68 @@ class Case(models.Model):
 
     def write(self, vals):
         """Override write to trigger actions based on decision and recalculate risk."""
+        # Track changes for timeline
+        old_values = {}
+        for case in self:
+            old_values[case.id] = {
+                'state': case.state,
+                'priority': case.priority,
+                'assigned_to': case.assigned_to.id if case.assigned_to else False,
+            }
+
         result = super(Case, self).write(vals)
 
-        # Handle decision changes and trigger appropriate actions
-        if 'decision' in vals:
-            for case in self:
-                case._handle_decision_action()
+        # Log timeline events for significant changes
+        for case in self:
+            old = old_values.get(case.id, {})
 
-        # If resolution or state changed on screening cases, recalculate risk
-        if ('resolution' in vals or 'state' in vals or 'decision' in vals):
+            # State changed
+            if 'state' in vals and old.get('state') != vals['state']:
+                case.timeline_ids.create({
+                    'case_id': case.id,
+                    'event_type': 'status_changed',
+                    'description': _('Status changed from %s to %s') % (
+                        dict(case._fields['state'].selection).get(old.get('state'), old.get('state')),
+                        dict(case._fields['state'].selection).get(vals['state'], vals['state'])
+                    ),
+                    'details': {'from': old.get('state'), 'to': vals['state']}
+                })
+
+            # Priority changed
+            if 'priority' in vals and old.get('priority') != vals['priority']:
+                case.timeline_ids.create({
+                    'case_id': case.id,
+                    'event_type': 'priority_changed',
+                    'description': _('Priority changed from %s to %s') % (
+                        dict(case._fields['priority'].selection).get(old.get('priority'), old.get('priority')),
+                        dict(case._fields['priority'].selection).get(vals['priority'], vals['priority'])
+                    ),
+                    'details': {'from': old.get('priority'), 'to': vals['priority']}
+                })
+
+            # Assignment changed
+            if 'assigned_to' in vals and old.get('assigned_to') != vals['assigned_to']:
+                new_user = self.env['res.users'].browse(vals['assigned_to']) if vals['assigned_to'] else False
+                old_user = self.env['res.users'].browse(old.get('assigned_to')) if old.get('assigned_to') else False
+                case.timeline_ids.create({
+                    'case_id': case.id,
+                    'event_type': 'assigned',
+                    'description': _('Case assigned from %s to %s') % (
+                        old_user.name if old_user else 'Unassigned',
+                        new_user.name if new_user else 'Unassigned'
+                    ),
+                    'details': {'from_user_id': old.get('assigned_to'), 'to_user_id': vals['assigned_to']}
+                })
+
+        # If state changed on screening cases, recalculate risk
+        if 'state' in vals:
             screening_cases = self.filtered(lambda c: c.case_type == 'screening' and c.partner_id)
             for case in screening_cases:
                 case.partner_id._compute_risk()
-                _logger.info('Risk recalculated for partner %s after case %s resolution change',
+                _logger.info('Risk recalculated for partner %s after case %s state change',
                            case.partner_id.name, case.name)
 
         return result
-
-    def _handle_decision_action(self):
-        """Handle actions based on decision for screening cases."""
-        self.ensure_one()
-
-        if self.case_type != 'screening':
-            return
-
-        # Update partner sanctions status based on decision
-        if self.decision == 'confirmed_match':
-            # Set sanctions_status to 'match'
-            self.partner_id.sanctions_status = 'match'
-            self.partner_id.message_post(
-                body=_('Screening case %s: Confirmed Match. Enhanced monitoring required.') % self.name,
-                subject=_('Confirmed Sanctions Match'),
-                message_type='notification',
-            )
-            _logger.info('Partner %s sanctions status set to "match" (confirmed)', self.partner_id.name)
-        elif self.decision == 'potential_match':
-            # Set as match since ongoing monitoring required
-            self.partner_id.sanctions_status = 'match'
-            self.partner_id.message_post(
-                body=_('Screening case %s: Potential Match. Ongoing monitoring required.') % self.name,
-                subject=_('Potential Sanctions Match'),
-                message_type='notification',
-            )
-            _logger.info('Partner %s sanctions status set to "match" (potential)', self.partner_id.name)
-        elif self.decision == 'false_positive':
-            # Check if all screening cases are resolved as false positive
-            other_cases = self.env['aml.case'].search([
-                ('partner_id', '=', self.partner_id.id),
-                ('case_type', '=', 'screening'),
-                ('id', '!=', self.id)
-            ])
-
-            # Check if any other cases are not false positive or still open
-            has_active_concerns = any(
-                case.state in ['open', 'investigating', 'under_review', 'pending_info'] or
-                (case.state in ['resolved_approved', 'resolved_rejected', 'closed'] and
-                 case.decision in ['confirmed_match', 'potential_match'])
-                for case in other_cases
-            )
-
-            if not has_active_concerns:
-                # No other open or confirmed cases, clear sanctions status
-                self.partner_id.sanctions_status = 'clear'
-                self.partner_id.message_post(
-                    body=_('Screening case %s: False Positive. Sanctions status cleared.') % self.name,
-                    subject=_('False Positive - Cleared'),
-                    message_type='notification',
-                )
-                _logger.info('Partner %s sanctions status cleared (false positive case %s)',
-                           self.partner_id.name, self.name)
-            else:
-                # Other cases still have concerns, keep as match
-                self.partner_id.message_post(
-                    body=_('Screening case %s: False Positive. Status remains "match" due to other active cases.') % self.name,
-                    subject=_('False Positive'),
-                    message_type='notification',
-                )
-                _logger.info('Partner %s sanctions status remains "match" due to other cases', self.partner_id.name)
 
     @api.depends('alert_ids')
     def _compute_alert_count(self):
@@ -295,6 +282,93 @@ class Case(models.Model):
         """Count related transactions."""
         for case in self:
             case.move_count = len(case.move_ids)
+
+    @api.depends('decision_ids')
+    def _compute_decision_count(self):
+        """Count decisions."""
+        for case in self:
+            case.decision_count = len(case.decision_ids)
+
+    @api.depends('timeline_ids')
+    def _compute_timeline_count(self):
+        """Count timeline events."""
+        for case in self:
+            case.timeline_count = len(case.timeline_ids)
+
+    @api.depends('note_ids')
+    def _compute_note_count(self):
+        """Count notes."""
+        for case in self:
+            case.note_count = len(case.note_ids)
+
+    @api.depends('task_ids')
+    def _compute_task_count(self):
+        """Count tasks."""
+        for case in self:
+            case.task_count = len(case.task_ids)
+
+    @api.depends('opened_date', 'priority', 'case_type')
+    def _compute_sla_due_date(self):
+        """Compute SLA due date based on priority and case type."""
+        for case in self:
+            if not case.opened_date:
+                case.sla_due_date = False
+                continue
+
+            # SLA days based on priority
+            sla_days = {
+                'critical': 1,
+                'high': 3,
+                'medium': 7,
+                'low': 14
+            }.get(case.priority, 7)
+
+            # Screening cases have tighter SLAs
+            if case.case_type == 'screening':
+                sla_days = max(1, sla_days // 2)
+
+            case.sla_due_date = case.opened_date + timedelta(days=sla_days)
+
+    @api.depends('sla_due_date', 'state')
+    def _compute_overdue(self):
+        """Compute if case is overdue."""
+        now = fields.Datetime.now()
+        for case in self:
+            if case.state in ['closed', 'resolved_approved', 'resolved_rejected']:
+                case.is_overdue = False
+                case.days_overdue = 0
+            elif case.sla_due_date:
+                case.is_overdue = now > case.sla_due_date
+                if case.is_overdue:
+                    delta = now - case.sla_due_date
+                    case.days_overdue = delta.days
+                else:
+                    case.days_overdue = 0
+            else:
+                case.is_overdue = False
+                case.days_overdue = 0
+
+    @api.constrains('state', 'decision_ids')
+    def _check_state_transition(self):
+        """Validate state transitions."""
+        for case in self:
+            # Can't resolve without a decision
+            if case.state in ['resolved_approved', 'resolved_rejected'] and not case.decision_ids:
+                raise models.ValidationError(
+                    _('Cannot resolve case without making a decision. Please add a decision first.')
+                )
+
+            # Can't close screening case with true positive without ongoing tasks
+            if case.state == 'closed' and case.case_type == 'screening':
+                if case.decision_ids:
+                    latest_decision = case.decision_ids.sorted('decided_date', reverse=True)[0]
+                    if latest_decision.outcome == 'true_positive':
+                        active_tasks = case.task_ids.filtered(lambda t: t.state != 'completed')
+                        if not active_tasks:
+                            _logger.warning(
+                                'Closing screening case %s with true positive but no active monitoring tasks',
+                                case.name
+                            )
 
     def action_investigate(self):
         """Move case to investigating state."""
@@ -336,6 +410,74 @@ class Case(models.Model):
             self.partner_id._compute_risk()
             _logger.info('Risk recalculated for partner %s after case %s closed',
                         self.partner_id.name, self.name)
+
+    @api.model
+    def cron_check_sla_violations(self):
+        """Cron job to check for SLA violations and auto-escalate."""
+        # Find all active cases
+        active_cases = self.search([
+            ('state', 'not in', ['closed', 'resolved_approved', 'resolved_rejected']),
+            ('priority', '!=', 'critical')  # Don't escalate critical further
+        ])
+
+        # Filter overdue cases (computed field not searchable)
+        overdue_cases = active_cases.filtered(lambda c: c.is_overdue)
+
+        _logger.info('SLA check found %d overdue cases out of %d active cases',
+                    len(overdue_cases), len(active_cases))
+
+        for case in overdue_cases:
+            # Check if already escalated recently (within last 3 days)
+            recent_escalations = self.env['aml.case.timeline'].search([
+                ('case_id', '=', case.id),
+                ('event_type', '=', 'priority_changed'),
+                ('event_date', '>=', fields.Datetime.now() - timedelta(days=3))
+            ])
+
+            if recent_escalations:
+                continue
+
+            # Auto-escalate priority
+            old_priority = case.priority
+            new_priority = {
+                'low': 'medium',
+                'medium': 'high',
+                'high': 'critical'
+            }.get(old_priority, 'high')
+
+            case.write({'priority': new_priority})
+
+            # Create timeline event
+            case.timeline_ids.create({
+                'case_id': case.id,
+                'event_type': 'priority_changed',
+                'description': _('Case auto-escalated from %s to %s due to SLA violation (%d days overdue)') % (
+                    old_priority.title(),
+                    new_priority.title(),
+                    case.days_overdue
+                ),
+                'details': {
+                    'from': old_priority,
+                    'to': new_priority,
+                    'reason': 'sla_violation',
+                    'days_overdue': case.days_overdue
+                }
+            })
+
+            # Notify assigned user
+            if case.assigned_to:
+                case.message_post(
+                    body=_('Case is %d days overdue. Priority auto-escalated to %s. Please address urgently.') % (
+                        case.days_overdue,
+                        new_priority.title()
+                    ),
+                    subject=_('SLA Violation - Case Escalated'),
+                    partner_ids=[case.assigned_to.partner_id.id],
+                    message_type='notification',
+                )
+
+            _logger.info('Case %s auto-escalated from %s to %s (%d days overdue)',
+                       case.name, old_priority, new_priority, case.days_overdue)
 
     def action_view_alerts(self):
         """View related alerts."""

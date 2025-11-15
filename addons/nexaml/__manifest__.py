@@ -34,8 +34,11 @@ Comprehensive AML compliance solution including:
         'data/transaction_rules.xml',
         'views/screening_views.xml',
         'views/transaction_monitoring_views.xml',
+        'views/case_management_views.xml',
+        'views/ewra_views.xml',
         'views/res_partner_views.xml',
         'views/account_payment_method_views.xml',
+        'views/pdf_report_actions.xml',
         # 'views/dashboard_views.xml',  # TODO: Fix circular XML references
         'views/report_wizard_views.xml',
         'reports/report_templates.xml',

@@ -4,4 +4,15 @@ access_aml_screening_user,access.aml.screening.user,model_aml_screening,base.gro
 access_aml_transaction_rule_user,access.aml.transaction.rule.user,model_aml_transaction_rule,base.group_user,1,1,1,1
 access_aml_alert_user,access.aml.alert.user,model_aml_alert,base.group_user,1,1,1,1
 access_aml_case_user,access.aml.case.user,model_aml_case,base.group_user,1,1,1,1
+access_aml_case_decision_user,access.aml.case.decision.user,model_aml_case_decision,base.group_user,1,1,1,1
+access_aml_case_timeline_user,access.aml.case.timeline.user,model_aml_case_timeline,base.group_user,1,1,1,0
+access_aml_case_note_user,access.aml.case.note.user,model_aml_case_note,base.group_user,1,1,1,1
+access_aml_case_task_user,access.aml.case.task.user,model_aml_case_task,base.group_user,1,1,1,1
+access_nexaml_ewra_run_user,access.nexaml.ewra.run.user,model_nexaml_ewra_run,base.group_user,1,1,1,1
+access_nexaml_ewra_pillar_user,access.nexaml.ewra.pillar.user,model_nexaml_ewra_pillar,base.group_user,1,1,1,1
+access_nexaml_ewra_settings_snapshot_user,access.nexaml.ewra.settings.snapshot.user,model_nexaml_ewra_settings_snapshot,base.group_user,1,1,1,1
+access_nexaml_ewra_narrative_user,access.nexaml.ewra.narrative.user,model_nexaml_ewra_narrative,base.group_user,1,1,1,1
+access_aml_case_pdf_action_user,access.aml.case.pdf.action.user,model_aml_case_pdf_action,base.group_user,1,1,1,1
+access_res_partner_pdf_action_user,access.res.partner.pdf.action.user,model_res_partner_pdf_action,base.group_user,1,1,1,1
+access_nexaml_ewra_pdf_action_user,access.nexaml.ewra.pdf.action.user,model_nexaml_ewra_pdf_action,base.group_user,1,1,1,1
 access_report_wizard_user,access.report.wizard.user,model_report_wizard,base.group_user,1,1,1,1

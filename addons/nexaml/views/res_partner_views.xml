@@ -39,6 +39,61 @@
             <!-- Add NexAML tab -->
             <notebook position="inside">
                 <page string="NexAML" name="nexaml">
+
+                    <!-- Compliance Flags (Top Section) -->
+                    <div class="alert alert-info" role="alert" invisible="not pep_status and sanctions_status == 'clear' and not kyc_expired and not on_watch_list">
+                        <strong>Compliance Alerts:</strong>
+                        <div>
+                            <span invisible="not pep_status" class="badge badge-warning" style="margin-right: 5px;">
+                                <i class="fa fa-exclamation-triangle"/> PEP
+                            </span>
+                            <span invisible="sanctions_status != 'match'" class="badge badge-danger" style="margin-right: 5px;">
+                                <i class="fa fa-ban"/> Sanctioned
+                            </span>
+                            <span invisible="not kyc_expired" class="badge badge-warning" style="margin-right: 5px;">
+                                <i class="fa fa-clock-o"/> KYC Expired
+                            </span>
+                            <span invisible="not on_watch_list" class="badge badge-warning" style="margin-right: 5px;">
+                                <i class="fa fa-eye"/> Watch List
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Basic Information Section -->
+                    <separator string="Basic Information" colspan="4"/>
+                    <group name="basic_information">
+                        <group>
+                            <field name="is_company" invisible="1"/>
+                            <field name="customer_rank" invisible="1"/>
+                            <field name="company_type"/>
+                            <field name="create_date" readonly="1"/>
+                            <field name="write_date" readonly="1"/>
+                            <field name="vat" invisible="company_type == 'person'"/>
+                        </group>
+                        <group>
+                            <field name="screening_count" readonly="1"/>
+                            <field name="last_screening_date" readonly="1"/>
+                            <field name="country_id" invisible="company_type == 'company'"/>
+                        </group>
+                    </group>
+
+                    <!-- Employment & Financial (for individuals only) -->
+                    <separator string="Employment &amp; Financial Information" colspan="4" invisible="company_type == 'company'"/>
+                    <group name="employment_financial" invisible="company_type == 'company'">
+                        <group>
+                            <field name="occupation"/>
+                            <field name="employer_name"/>
+                            <field name="employer_address"/>
+                        </group>
+                        <group>
+                            <field name="source_of_funds"/>
+                            <field name="source_of_funds_other" invisible="source_of_funds != 'other'"/>
+                            <field name="annual_income_range"/>
+                        </group>
+                    </group>
+
+                    <!-- Risk Assessment Section -->
+                    <separator string="Risk Assessment" colspan="4"/>
                     <!-- Summary Section -->
                     <group name="summary_section">
                         <group string="Risk Summary" colspan="2">
@@ -74,49 +129,120 @@
                                 icon="fa-search"/>
                     </div>
 
-                    <!-- Risk Components (30/20/30/20 formula) -->
-                    <separator string="Risk Components" colspan="4"/>
-                    <group string="Inherent Risk Calculation: (Customer × 30%) + (Geography × 20%) + (Product × 30%) + (Channel × 20%)">
-                        <group string="Component Scores">
-                            <field name="customer_risk" widget="radio" string="Customer (30%)"/>
-                            <field name="geography_risk" widget="radio" string="Geography (20%)"/>
-                            <field name="product_risk" widget="radio" string="Product (30%)"/>
-                            <field name="channel_risk" widget="radio" string="Channel (20%)"/>
+                    <!-- Risk Component Visualization -->
+                    <group string="Risk Components">
+                        <group>
+                            <label for="customer_risk" string="Customer (30%)"/>
+                            <div>
+                                <field name="customer_risk" widget="badge" nolabel="1"
+                                       decoration-success="customer_risk &lt;= 1.6"
+                                       decoration-warning="customer_risk &gt; 1.6 and customer_risk &lt;= 2.3"
+                                       decoration-danger="customer_risk &gt; 2.3"
+                                       style="width: 100%; height: 24px; border-radius: 4px; display: block; text-align: center; line-height: 24px;"/>
+                            </div>
                         </group>
-                        <group string="Risk Levels">
-                            <div class="o_form_label text-success">Low: 1.0-1.6</div>
-                            <div class="o_form_label text-warning">Medium: 1.7-2.3</div>
-                            <div class="o_form_label text-danger">High: 2.4-3.0</div>
+                        <group>
+                            <label for="geography_risk" string="Geography (20%)"/>
+                            <div>
+                                <field name="geography_risk" widget="badge" nolabel="1"
+                                       decoration-success="geography_risk &lt;= 1.6"
+                                       decoration-warning="geography_risk &gt; 1.6 and geography_risk &lt;= 2.3"
+                                       decoration-danger="geography_risk &gt; 2.3"
+                                       style="width: 100%; height: 24px; border-radius: 4px; display: block; text-align: center; line-height: 24px;"/>
+                            </div>
                         </group>
                     </group>
-
-                    <!-- Products & Services -->
-                    <separator string="Products &amp; Services" colspan="4"/>
-                    <field name="product_ids" widget="many2many_tags" placeholder="Select products/services used by customer" nolabel="1"/>
-
-                    <!-- Controls & Mitigations -->
-                    <separator string="Controls &amp; Mitigations" colspan="4"/>
-                    <group>
-                        <field name="control_ids" widget="many2many_tags" placeholder="Select risk controls applied" nolabel="1"/>
-                        <div class="o_form_label text-muted">Controls reduce inherent risk to calculate residual risk</div>
-                    </group>
-
-                    <!-- Sanctions Screening -->
-                    <separator string="Sanctions Screening" colspan="4"/>
                     <group>
                         <group>
+                            <label for="product_risk" string="Product (30%)"/>
+                            <div>
+                                <field name="product_risk" widget="badge" nolabel="1"
+                                       decoration-success="product_risk &lt;= 1.6"
+                                       decoration-warning="product_risk &gt; 1.6 and product_risk &lt;= 2.3"
+                                       decoration-danger="product_risk &gt; 2.3"
+                                       style="width: 100%; height: 24px; border-radius: 4px; display: block; text-align: center; line-height: 24px;"/>
+                            </div>
+                        </group>
+                        <group>
+                            <label for="channel_risk" string="Channel (20%)"/>
+                            <div>
+                                <field name="channel_risk" widget="badge" nolabel="1"
+                                       decoration-success="channel_risk &lt;= 1.6"
+                                       decoration-warning="channel_risk &gt; 1.6 and channel_risk &lt;= 2.3"
+                                       decoration-danger="channel_risk &gt; 2.3"
+                                       style="width: 100%; height: 24px; border-radius: 4px; display: block; text-align: center; line-height: 24px;"/>
+                            </div>
+                        </group>
+                    </group>
+
+                    <group name="compliance_section">
+                        <group string="Sanctions Screening">
                             <field name="sanctions_status" widget="badge"
                                    decoration-muted="sanctions_status == 'not_screened'"
                                    decoration-success="sanctions_status == 'clear'"
                                    decoration-danger="sanctions_status == 'match'"
-                                   decoration-info="sanctions_status == 'pending'"
-                                   string="Screening Status"/>
-                            <field name="last_screening_date" string="Last Screened"/>
+                                   decoration-info="sanctions_status == 'pending'"/>
+                            <field name="last_screening_date"/>
+                            <field name="screening_count" readonly="1"/>
                         </group>
-                        <group>
-                            <field name="screening_count" string="Total Screenings"/>
+                        <group string="KYC &amp; Monitoring">
+                            <field name="kyc_expiry_date"/>
+                            <field name="kyc_expired" readonly="1" widget="boolean"
+                                   decoration-danger="kyc_expired == True"/>
+                            <field name="on_watch_list" widget="boolean_toggle"/>
+                            <field name="watch_list_reason" invisible="not on_watch_list"
+                                   placeholder="Reason for watch list placement..."/>
                         </group>
                     </group>
+
+                    <!-- Related Parties (for companies) -->
+                    <separator string="Related Parties (Directors, Shareholders, UBOs)" colspan="4" invisible="company_type == 'person'"/>
+                    <field name="child_ids" invisible="company_type == 'person'" context="{'default_parent_id': id}">
+                        <list editable="bottom">
+                            <field name="name"/>
+                            <field name="party_type"/>
+                            <field name="ownership_percentage" optional="show" invisible="party_type not in ('shareholder', 'ubo')"/>
+                            <field name="is_ubo" optional="show" invisible="party_type not in ('shareholder', 'ubo')"/>
+                            <field name="pep_status" optional="show" widget="boolean_toggle"/>
+                            <field name="sanctions_status" optional="show" widget="badge"
+                                   decoration-success="sanctions_status == 'clear'"
+                                   decoration-danger="sanctions_status == 'match'"/>
+                            <field name="email" optional="hide"/>
+                            <field name="phone" optional="hide"/>
+                        </list>
+                        <form>
+                            <sheet>
+                                <group>
+                                    <group>
+                                        <field name="name"/>
+                                        <field name="party_type"/>
+                                        <field name="email"/>
+                                        <field name="phone"/>
+                                    </group>
+                                    <group>
+                                        <field name="ownership_percentage" invisible="party_type not in ('shareholder', 'ubo')"/>
+                                        <field name="is_ubo" readonly="1" invisible="party_type not in ('shareholder', 'ubo')"/>
+                                        <field name="pep_status"/>
+                                        <field name="sanctions_status"/>
+                                    </group>
+                                </group>
+                            </sheet>
+                        </form>
+                    </field>
+
+                    <!-- Documents & Attachments -->
+                    <separator string="Documents &amp; Attachments" colspan="4"/>
+                    <div class="text-center" style="padding: 20px;">
+                        <button name="%(base.action_attachment)d" type="action"
+                                string="Manage Documents"
+                                class="btn-primary"
+                                context="{'default_res_model': 'res.partner', 'default_res_id': id}"
+                                icon="fa-folder-open"/>
+                        <div class="text-muted" style="margin-top: 10px;">
+                            <p>Click to view and manage customer documents</p>
+                        </div>
+                    </div>
+
                 </page>
 
                 <!-- Related Party Information (for contacts only) -->

@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Case Decision Views -->
+    <record id="view_case_decision_tree" model="ir.ui.view">
+        <field name="name">aml.case.decision.tree</field>
+        <field name="model">aml.case.decision</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="decided_date"/>
+                <field name="decision_type" widget="badge"/>
+                <field name="outcome" optional="show"/>
+                <field name="decided_by"/>
+                <field name="rationale" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_case_decision_form" model="ir.ui.view">
+        <field name="name">aml.case.decision.form</field>
+        <field name="model">aml.case.decision</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="case_id" readonly="1"/>
+                            <field name="decision_type"/>
+                            <field name="outcome"/>
+                            <field name="decided_by"/>
+                            <field name="decided_date"/>
+                        </group>
+                        <group>
+                            <field name="reviewed_by"/>
+                            <field name="reviewed_date"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="rationale" placeholder="Explain the reasoning behind this decision..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Case Timeline Views -->
+    <record id="view_case_timeline_tree" model="ir.ui.view">
+        <field name="name">aml.case.timeline.tree</field>
+        <field name="model">aml.case.timeline</field>
+        <field name="arch" type="xml">
+            <tree create="0" delete="0" default_order="event_date desc">
+                <field name="event_date"/>
+                <field name="event_type" widget="badge"
+                       decoration-info="event_type == 'status_changed'"
+                       decoration-warning="event_type == 'priority_changed'"
+                       decoration-success="event_type == 'decision_made'"/>
+                <field name="description"/>
+                <field name="user_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_case_timeline_form" model="ir.ui.view">
+        <field name="name">aml.case.timeline.form</field>
+        <field name="model">aml.case.timeline</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0" delete="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="case_id" readonly="1"/>
+                            <field name="event_type"/>
+                            <field name="event_date"/>
+                            <field name="user_id"/>
+                        </group>
+                        <group>
+                            <field name="description"/>
+                        </group>
+                    </group>
+                    <group string="Additional Details" invisible="not details">
+                        <field name="details" widget="ace" options="{'mode': 'json'}" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Case Note Views -->
+    <record id="view_case_note_tree" model="ir.ui.view">
+        <field name="name">aml.case.note.tree</field>
+        <field name="model">aml.case.note</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="created_date"/>
+                <field name="note_type" widget="badge"/>
+                <field name="title"/>
+                <field name="author_id"/>
+                <field name="is_confidential" optional="show" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_case_note_form" model="ir.ui.view">
+        <field name="name">aml.case.note.form</field>
+        <field name="model">aml.case.note</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="case_id" readonly="1"/>
+                            <field name="note_type"/>
+                            <field name="title"/>
+                        </group>
+                        <group>
+                            <field name="author_id"/>
+                            <field name="created_date"/>
+                            <field name="is_confidential"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="content" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Case Task Views -->
+    <record id="view_case_task_tree" model="ir.ui.view">
+        <field name="name">aml.case.task.tree</field>
+        <field name="model">aml.case.task</field>
+        <field name="arch" type="xml">
+            <tree decoration-muted="state == 'completed'" decoration-danger="due_date and due_date &lt; current_date and state != 'completed'">
+                <field name="name"/>
+                <field name="task_type" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-muted="state == 'pending'"
+                       decoration-info="state == 'in_progress'"
+                       decoration-success="state == 'completed'"
+                       decoration-danger="state == 'cancelled'"/>
+                <field name="priority" widget="priority" optional="show"/>
+                <field name="assigned_to"/>
+                <field name="due_date"/>
+                <button name="action_mark_done" type="object" string="Mark Done" icon="fa-check-circle" invisible="state == 'completed'"/>
+                <button name="action_mark_in_progress" type="object" string="Start" icon="fa-play" invisible="state != 'pending'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_case_task_form" model="ir.ui.view">
+        <field name="name">aml.case.task.form</field>
+        <field name="model">aml.case.task</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_mark_in_progress" string="Start Task" type="object" class="btn-primary" invisible="state != 'pending'"/>
+                    <button name="action_mark_done" string="Mark Done" type="object" class="btn-success" invisible="state == 'completed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,in_progress,completed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="case_id" readonly="1"/>
+                            <field name="name"/>
+                            <field name="task_type"/>
+                            <field name="priority" widget="priority"/>
+                        </group>
+                        <group>
+                            <field name="assigned_to"/>
+                            <field name="due_date"/>
+                            <field name="completed_date" readonly="1" invisible="state != 'completed'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="notes" placeholder="Add task notes or instructions..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_case_task_kanban" model="ir.ui.view">
+        <field name="name">aml.case.task.kanban</field>
+        <field name="model">aml.case.task</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="state"/>
+                <field name="priority"/>
+                <field name="assigned_to"/>
+                <field name="due_date"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_card oe_kanban_global_click">
+                            <div class="oe_kanban_content">
+                                <div class="o_kanban_record_top">
+                                    <div class="o_kanban_record_headings">
+                                        <strong class="o_kanban_record_title"><field name="name"/></strong>
+                                    </div>
+                                    <span class="float-end">
+                                        <field name="priority" widget="priority"/>
+                                    </span>
+                                </div>
+                                <div class="o_kanban_record_body">
+                                    <field name="task_type"/>
+                                </div>
+                                <div class="o_kanban_record_bottom">
+                                    <div class="oe_kanban_bottom_left">
+                                        <field name="assigned_to" widget="many2one_avatar_user"/>
+                                    </div>
+                                    <div class="oe_kanban_bottom_right">
+                                        <field name="due_date" widget="date"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_case_decision" model="ir.actions.act_window">
+        <field name="name">Case Decisions</field>
+        <field name="res_model">aml.case.decision</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_case_id': active_id}</field>
+    </record>
+
+    <record id="action_case_timeline" model="ir.actions.act_window">
+        <field name="name">Case Timeline</field>
+        <field name="res_model">aml.case.timeline</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_case_id': active_id}</field>
+    </record>
+
+    <record id="action_case_note" model="ir.actions.act_window">
+        <field name="name">Case Notes</field>
+        <field name="res_model">aml.case.note</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_case_id': active_id, 'default_case_id': active_id}</field>
+    </record>
+
+    <record id="action_case_task" model="ir.actions.act_window">
+        <field name="name">Case Tasks</field>
+        <field name="res_model">aml.case.task</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="context">{'search_default_case_id': active_id, 'default_case_id': active_id}</field>
+    </record>
+</odoo>

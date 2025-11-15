@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Case PDF Action -->
+    <record id="view_case_pdf_action_form" model="ir.ui.view">
+        <field name="name">aml.case.pdf.action.form</field>
+        <field name="model">aml.case.pdf.action</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="case_id" readonly="1"/>
+                </group>
+                <footer>
+                    <button name="action_generate_pdf" string="Generate PDF" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_case_generate_pdf" model="ir.actions.act_window">
+        <field name="name">Generate Case PDF</field>
+        <field name="res_model">aml.case.pdf.action</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_aml_case"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <!-- Customer Profile PDF Action -->
+    <record id="view_partner_pdf_action_form" model="ir.ui.view">
+        <field name="name">res.partner.pdf.action.form</field>
+        <field name="model">res.partner.pdf.action</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="partner_id" readonly="1"/>
+                </group>
+                <footer>
+                    <button name="action_generate_pdf" string="Generate PDF" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_partner_generate_pdf" model="ir.actions.act_window">
+        <field name="name">Generate Customer Profile PDF</field>
+        <field name="res_model">res.partner.pdf.action</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="base.model_res_partner"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <!-- EWRA PDF Action -->
+    <record id="view_ewra_pdf_action_form" model="ir.ui.view">
+        <field name="name">nexaml.ewra.pdf.action.form</field>
+        <field name="model">nexaml.ewra.pdf.action</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="run_id" readonly="1"/>
+                </group>
+                <footer>
+                    <button name="action_generate_pdf" string="Generate PDF" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ewra_generate_pdf" model="ir.actions.act_window">
+        <field name="name">Generate EWRA PDF</field>
+        <field name="res_model">nexaml.ewra.pdf.action</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_nexaml_ewra_run"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <!-- Add Generate PDF button to Case form -->
+    <record id="view_case_form_pdf_button" model="ir.ui.view">
+        <field name="name">aml.case.form.pdf.button</field>
+        <field name="model">aml.case</field>
+        <field name="inherit_id" ref="nexaml.view_case_form"/>
+        <field name="arch" type="xml">
+            <button name="action_close" position="after">
+                <button name="%(nexaml.action_case_generate_pdf)d"
+                        string="Generate PDF Report"
+                        type="action"
+                        class="btn-secondary"
+                        icon="fa-file-pdf-o"/>
+            </button>
+        </field>
+    </record>
+
+    <!-- Add Generate PDF button to Partner form -->
+    <record id="view_partner_form_pdf_button" model="ir.ui.view">
+        <field name="name">res.partner.form.pdf.button</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="nexaml.view_partner_form"/>
+        <field name="arch" type="xml">
+            <button name="action_screen_sanctions" position="after">
+                <button name="%(nexaml.action_partner_generate_pdf)d"
+                        string="Generate PDF Profile"
+                        type="action"
+                        class="btn-secondary"
+                        icon="fa-file-pdf-o"/>
+            </button>
+        </field>
+    </record>
+</odoo>

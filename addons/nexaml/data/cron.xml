@@ -24,5 +24,17 @@
             <field name="active" eval="True"/>
             <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).replace(hour=3, minute=0, second=0)"/>
         </record>
+
+        <!-- SLA Monitoring and Auto-Escalation Cron Job -->
+        <record id="ir_cron_check_sla" model="ir.cron">
+            <field name="name">NexAML: Check Case SLA Violations</field>
+            <field name="model_id" ref="model_aml_case"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_check_sla_violations()</field>
+            <field name="interval_number">6</field>
+            <field name="interval_type">hours</field>
+            <field name="active" eval="True"/>
+            <field name="nextcall" eval="DateTime.now() + timedelta(hours=6)"/>
+        </record>
     </data>
 </odoo>

@@ -380,6 +380,22 @@
                                 invisible="move_count == 0">
                             <field name="move_count" widget="statinfo" string="Transactions"/>
                         </button>
+                        <button name="%(nexaml.action_case_decision)d" type="action" class="oe_stat_button" icon="fa-gavel"
+                                context="{'search_default_case_id': id, 'default_case_id': id}">
+                            <field name="decision_count" widget="statinfo" string="Decisions"/>
+                        </button>
+                        <button name="%(nexaml.action_case_timeline)d" type="action" class="oe_stat_button" icon="fa-history"
+                                context="{'search_default_case_id': id}">
+                            <field name="timeline_count" widget="statinfo" string="Timeline"/>
+                        </button>
+                        <button name="%(nexaml.action_case_note)d" type="action" class="oe_stat_button" icon="fa-sticky-note-o"
+                                context="{'search_default_case_id': id, 'default_case_id': id}">
+                            <field name="note_count" widget="statinfo" string="Notes"/>
+                        </button>
+                        <button name="%(nexaml.action_case_task)d" type="action" class="oe_stat_button" icon="fa-tasks"
+                                context="{'search_default_case_id': id, 'default_case_id': id}">
+                            <field name="task_count" widget="statinfo" string="Tasks"/>
+                        </button>
                     </div>
                     <widget name="web_ribbon" title="Closed" bg_color="text-bg-secondary" invisible="state != 'closed'"/>
                     <widget name="web_ribbon" title="Resolved - Approved" bg_color="text-bg-success" invisible="state != 'resolved_approved'"/>
@@ -431,21 +447,106 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Resolution" name="resolution" invisible="state not in ['under_review', 'resolved_approved', 'resolved_rejected', 'closed']">
-                            <group>
-                                <group string="Decision">
-                                    <field name="case_type" invisible="1"/>
-                                    <field name="decision" widget="radio"
-                                           required="state in ['resolved_approved', 'resolved_rejected', 'closed']"
-                                           options="{'horizontal': true}"/>
-                                </group>
-                                <group string="Action Taken">
-                                    <field name="action_taken"
-                                           required="state in ['resolved_approved', 'resolved_rejected', 'closed']"/>
-                                </group>
-                            </group>
-                            <separator string="Resolution Notes"/>
-                            <field name="resolution_notes" placeholder="Describe the resolution, decision rationale, and actions taken..."/>
+                        <page string="Decisions" name="decisions">
+                            <field name="decision_ids">
+                                <list>
+                                    <field name="decided_date"/>
+                                    <field name="decision_type" widget="badge"/>
+                                    <field name="outcome"/>
+                                    <field name="decided_by"/>
+                                </list>
+                                <form>
+                                    <group>
+                                        <group>
+                                            <field name="decision_type"/>
+                                            <field name="outcome"/>
+                                            <field name="decided_by"/>
+                                            <field name="decided_date"/>
+                                        </group>
+                                        <group>
+                                            <field name="reviewed_by"/>
+                                            <field name="reviewed_date"/>
+                                        </group>
+                                    </group>
+                                    <group>
+                                        <field name="rationale" placeholder="Explain the reasoning behind this decision..."/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Timeline" name="timeline">
+                            <field name="timeline_ids" readonly="1">
+                                <list create="0" delete="0" default_order="event_date desc">
+                                    <field name="event_date"/>
+                                    <field name="event_type" widget="badge"/>
+                                    <field name="description"/>
+                                    <field name="user_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="note_ids">
+                                <list>
+                                    <field name="created_date"/>
+                                    <field name="note_type" widget="badge"/>
+                                    <field name="title"/>
+                                    <field name="author_id"/>
+                                    <field name="is_confidential" widget="boolean_toggle"/>
+                                </list>
+                                <form>
+                                    <group>
+                                        <group>
+                                            <field name="note_type"/>
+                                            <field name="title"/>
+                                        </group>
+                                        <group>
+                                            <field name="author_id"/>
+                                            <field name="created_date"/>
+                                            <field name="is_confidential"/>
+                                        </group>
+                                    </group>
+                                    <group>
+                                        <field name="content" nolabel="1"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Tasks" name="tasks">
+                            <field name="task_ids">
+                                <list decoration-muted="state == 'completed'" decoration-danger="due_date and due_date &lt; current_date and state != 'completed'">
+                                    <field name="name"/>
+                                    <field name="task_type"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="priority" widget="priority"/>
+                                    <field name="assigned_to"/>
+                                    <field name="due_date"/>
+                                    <button name="action_mark_done" type="object" string="Done" icon="fa-check-circle" invisible="state == 'completed'"/>
+                                </list>
+                                <form>
+                                    <header>
+                                        <button name="action_mark_in_progress" string="Start" type="object" class="btn-primary" invisible="state != 'pending'"/>
+                                        <button name="action_mark_done" string="Done" type="object" class="btn-success" invisible="state == 'completed'"/>
+                                        <field name="state" widget="statusbar"/>
+                                    </header>
+                                    <sheet>
+                                        <group>
+                                            <group>
+                                                <field name="name"/>
+                                                <field name="task_type"/>
+                                                <field name="priority" widget="priority"/>
+                                            </group>
+                                            <group>
+                                                <field name="assigned_to"/>
+                                                <field name="due_date"/>
+                                                <field name="completed_date" readonly="1" invisible="state != 'completed'"/>
+                                            </group>
+                                        </group>
+                                        <group>
+                                            <field name="notes" placeholder="Add task notes..."/>
+                                        </group>
+                                    </sheet>
+                                </form>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>
