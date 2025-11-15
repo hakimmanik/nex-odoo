@@ -11,19 +11,89 @@
                         <field name="report_type"/>
                         <field name="date_from"/>
                         <field name="date_to"/>
-                        <field name="output_format"/>
                     </group>
                     <group>
                         <field name="company_id" groups="base.group_multi_company"/>
                         <field name="include_narrative" invisible="report_type not in ['sar', 'str']"/>
+                        <field name="query_type"/>
                     </group>
                 </group>
-                <group string="Filters">
-                    <field name="partner_ids" widget="many2many_tags" placeholder="All customers..."/>
+
+                <!-- Basic Selection Mode -->
+                <group string="Basic Selection (Optional)" invisible="query_type != 'single'">
+                    <field name="partner_ids" widget="many2many_tags" placeholder="Select customers (optional)..."/>
                     <field name="case_ids" widget="many2many_tags"
                            invisible="report_type not in ['sar', 'str']"
-                           placeholder="Select cases..."/>
+                           placeholder="Select cases (optional - uses date range if empty)..."/>
                 </group>
+
+                <!-- Advanced Filtering Mode -->
+                <notebook invisible="query_type != 'advanced'">
+                    <page string="Customer Filters" name="customer_filters">
+                        <group>
+                            <group string="Basic Info">
+                                <field name="filter_customer_name" placeholder="Search by name (optional)"/>
+                                <field name="filter_customer_type"/>
+                                <field name="filter_customer_status"/>
+                                <field name="filter_pep_status"/>
+                            </group>
+                            <group string="Risk">
+                                <field name="filter_risk_level"/>
+                                <field name="filter_risk_score_min"/>
+                                <field name="filter_risk_score_max"/>
+                                <field name="filter_edd_required"/>
+                                <field name="filter_sanctions_status"/>
+                            </group>
+                        </group>
+                        <group>
+                            <group string="Geographic">
+                                <field name="filter_country_ids" widget="many2many_tags" placeholder="Any country (optional)"/>
+                                <field name="filter_nationality_code" placeholder="Any nationality (optional)"/>
+                                <field name="filter_country_of_birth" placeholder="Any country (optional)"/>
+                                <field name="filter_resid_country_code" placeholder="Any country (optional)"/>
+                            </group>
+                            <group string="KYC/Onboarding">
+                                <field name="filter_onboarding_date_from"/>
+                                <field name="filter_onboarding_date_to"/>
+                                <field name="filter_has_expired_docs"/>
+                            </group>
+                        </group>
+                        <group>
+                            <group string="Additional Info">
+                                <field name="filter_source_of_funds" placeholder="Any source (optional)"/>
+                                <field name="filter_occupation" placeholder="Any occupation (optional)"/>
+                                <field name="filter_employer" placeholder="Any employer (optional)"/>
+                                <field name="filter_gender"/>
+                            </group>
+                            <group string="Business Info">
+                                <field name="filter_entity_type" placeholder="Any type (optional)"/>
+                                <field name="filter_sector" placeholder="Any sector (optional)"/>
+                            </group>
+                        </group>
+                    </page>
+
+                    <page string="Transaction Filters" name="transaction_filters">
+                        <group>
+                            <group string="Amount">
+                                <field name="filter_amount_min" placeholder="No minimum"/>
+                                <field name="filter_amount_max" placeholder="No maximum"/>
+                                <field name="threshold_amount" invisible="report_type != 'aift'"/>
+                            </group>
+                            <group string="Payment">
+                                <field name="filter_currency_ids" widget="many2many_tags" placeholder="All currencies (optional)"/>
+                                <field name="filter_payment_methods"/>
+                                <field name="filter_channel"/>
+                            </group>
+                        </group>
+                        <group>
+                            <group string="Geographic/Corridor">
+                                <field name="filter_domestic_only"/>
+                                <field name="filter_cross_border_only"/>
+                            </group>
+                        </group>
+                    </page>
+                </notebook>
+
                 <footer>
                     <button string="Generate Report" name="action_generate_report" type="object" class="btn-primary"/>
                     <button string="Cancel" class="btn-secondary" special="cancel"/>
@@ -37,6 +107,7 @@
         <field name="name">Generate Report</field>
         <field name="res_model">report.wizard</field>
         <field name="view_mode">form</field>
+        <field name="path">nexaml-reports</field>
         <field name="target">new</field>
     </record>
 </odoo>

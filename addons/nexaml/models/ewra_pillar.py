@@ -71,17 +71,27 @@ class EwraPillar(models.Model):
     # Controls
     control_pct = fields.Float(
         string='Control Effectiveness %',
+        compute='_compute_effective_control_pct',
+        store=True,
         help='Control effectiveness percentage (0-70%)'
     )
     control_band = fields.Selection(
         [('weak', 'Weak (0-20%)'),
          ('adequate', 'Adequate (21-40%)'),
          ('strong', 'Strong (41-55%)'),
-         ('very_strong', 'Very Strong (56-70%)')],
+         ('very_strong', 'Very Strong (56-70%)'),
+         ('custom', 'Custom')],
         string='Control Band',
-        compute='_compute_control_band',
-        store=True,
+        default='adequate',
         help='Control effectiveness classification'
+    )
+    custom_control_pct = fields.Float(
+        string='Custom Control %',
+        help='Custom control effectiveness percentage when band is "custom" (0-70%)'
+    )
+    control_reason = fields.Char(
+        string='Control Justification',
+        help='Reason for the chosen control effectiveness level'
     )
 
     # Residual Risk
@@ -139,29 +149,38 @@ class EwraPillar(models.Model):
             else:
                 pillar.inherent_label = 'high'
 
-    @api.depends('control_pct')
-    def _compute_control_band(self):
-        """Classify control effectiveness."""
+    @api.depends('control_band', 'custom_control_pct')
+    def _compute_effective_control_pct(self):
+        """Get effective control percentage based on band or custom value."""
         for pillar in self:
-            pct = pillar.control_pct or 0.0
-            if pct <= 20:
-                pillar.control_band = 'weak'
-            elif pct <= 40:
-                pillar.control_band = 'adequate'
-            elif pct <= 55:
-                pillar.control_band = 'strong'
+            if pillar.control_band == 'custom':
+                pillar.control_pct = pillar.custom_control_pct or 0.0
+            elif pillar.control_band == 'weak':
+                pillar.control_pct = 30.0
+            elif pillar.control_band == 'adequate':
+                pillar.control_pct = 60.0
+            elif pillar.control_band == 'strong':
+                pillar.control_pct = 80.0
+            elif pillar.control_band == 'very_strong':
+                pillar.control_pct = 90.0
             else:
-                pillar.control_band = 'very_strong'
+                pillar.control_pct = 0.0
 
-    @api.depends('inherent_score', 'control_pct')
+    @api.depends('inherent_score', 'control_pct', 'control_band', 'custom_control_pct')
     def _compute_residual_score(self):
         """Calculate residual risk after applying controls.
         Formula: Inherent Score × (1 - Control% / 100)
         """
         for pillar in self:
+            # Get effective control percentage
+            if pillar.control_band == 'custom':
+                control_pct = pillar.custom_control_pct or 0.0
+            else:
+                control_pct = pillar.control_pct or 0.0
+
             inherent = pillar.inherent_score
-            control = (pillar.control_pct or 0.0) / 100.0
-            pillar.residual_score = inherent * (1 - control)
+            control = control_pct / 100.0
+            pillar.residual_score = max(1.0, inherent * (1 - control))
 
     @api.depends('residual_score')
     def _compute_residual_label(self):
@@ -183,9 +202,14 @@ class EwraPillar(models.Model):
             if total > 0 and abs(total - 100.0) > 0.01:  # Allow small rounding errors
                 raise ValidationError(_('Risk distribution percentages must sum to 100%.'))
 
-    @api.constrains('control_pct')
+    @api.constrains('control_pct', 'custom_control_pct', 'control_band')
     def _check_control_pct(self):
         """Validate control percentage range."""
         for pillar in self:
-            if pillar.control_pct and (pillar.control_pct < 0 or pillar.control_pct > 70):
-                raise ValidationError(_('Control effectiveness must be between 0% and 70%.'))
+            if pillar.control_pct and (pillar.control_pct < 0 or pillar.control_pct > 100):
+                raise ValidationError(_('Control effectiveness must be between 0% and 100%.'))
+            if pillar.control_band == 'custom':
+                if not pillar.custom_control_pct:
+                    raise ValidationError(_('Custom control percentage is required when control band is "Custom".'))
+                if pillar.custom_control_pct < 0 or pillar.custom_control_pct > 100:
+                    raise ValidationError(_('Custom control effectiveness must be between 0% and 100%.'))

@@ -106,7 +106,7 @@ class CaseDecision(models.Model):
         })
 
         # 2. Update partner status for screening cases
-        if self.case_id.case_type == 'screening':
+        if self.case_id.case_type in ['sanctions', 'pep', 'adverse_media', 'screening']:
             self._process_screening_impact()
 
         # 3. Auto-update case state based on decision type
@@ -138,6 +138,45 @@ class CaseDecision(models.Model):
         if not partner:
             return
 
+        # Update related screening records linked to this case
+        # Find screenings linked via timeline
+        timeline_entries = self.env['aml.case.timeline'].search([
+            ('case_id', '=', self.case_id.id),
+            ('event_type', '=', 'other')
+        ])
+
+        screening_ids = []
+        for timeline in timeline_entries:
+            if timeline.details and 'screening_id' in str(timeline.details):
+                try:
+                    import json
+                    details = json.loads(timeline.details) if isinstance(timeline.details, str) else timeline.details
+                    if 'screening_id' in details:
+                        screening_ids.append(details['screening_id'])
+                except:
+                    pass
+
+        screenings = self.env['aml.screening'].browse(screening_ids) if screening_ids else self.env['aml.screening']
+
+        if self.outcome == 'false_positive':
+            # Mark screenings as false positive
+            for screening in screenings:
+                screening.sudo().write({
+                    'status': 'false_positive',
+                    'reviewed_by': self.decided_by.id,
+                    'review_date': self.decided_date,
+                    'review_notes': self.rationale
+                })
+        elif self.outcome == 'cleared':
+            # Mark screenings as clear
+            for screening in screenings:
+                screening.sudo().write({
+                    'status': 'clear',
+                    'reviewed_by': self.decided_by.id,
+                    'review_date': self.decided_date,
+                    'review_notes': self.rationale
+                })
+
         if self.outcome == 'true_positive':
             # Confirmed sanctions match
             partner.sanctions_status = 'match'
@@ -152,7 +191,7 @@ class CaseDecision(models.Model):
             self.env['aml.case.task'].create({
                 'case_id': self.case_id.id,
                 'name': _('Enhanced Due Diligence Required'),
-                'task_type': 'edd',
+                'task_type': 'document_review',
                 'priority': 'high',
                 'assigned_to': self.case_id.assigned_to.id if self.case_id.assigned_to else self.env.user.id,
                 'due_date': fields.Date.today() + timedelta(days=7),
@@ -160,24 +199,26 @@ class CaseDecision(models.Model):
             })
 
         elif self.outcome == 'false_positive':
-            # Check if all screening cases are false positive
-            other_cases = self.env['aml.case'].search([
-                ('partner_id', '=', partner.id),
-                ('case_type', '=', 'screening'),
-                ('id', '!=', self.case_id.id),
-                ('state', 'not in', ['closed', 'resolved_approved', 'resolved_rejected'])
-            ])
+            # Set partner status to false positive
+            partner.sanctions_status = 'false_positive'
+            partner.message_post(
+                body=_('Screening case %s: False Positive. Sanctions match dismissed.') % self.case_id.name,
+                subject=_('False Positive'),
+                message_type='notification',
+            )
+            _logger.info('Partner %s sanctions status set to false_positive (case %s)',
+                       partner.name, self.case_id.name)
 
-            if not other_cases:
-                # No other open screening cases, clear status
-                partner.sanctions_status = 'clear'
-                partner.message_post(
-                    body=_('Screening case %s: False Positive. Sanctions status cleared.') % self.case_id.name,
-                    subject=_('False Positive - Cleared'),
-                    message_type='notification',
-                )
-                _logger.info('Partner %s sanctions status cleared (false positive case %s)',
-                           partner.name, self.case_id.name)
+        elif self.outcome == 'cleared':
+            # Set partner status to cleared
+            partner.sanctions_status = 'clear'
+            partner.message_post(
+                body=_('Screening case %s: Cleared. No sanctions risk identified.') % self.case_id.name,
+                subject=_('Cleared'),
+                message_type='notification',
+            )
+            _logger.info('Partner %s sanctions status cleared (case %s)',
+                       partner.name, self.case_id.name)
 
         elif self.outcome == 'ongoing_monitoring':
             # Keep as match but create monitoring task
@@ -185,7 +226,7 @@ class CaseDecision(models.Model):
             self.env['aml.case.task'].create({
                 'case_id': self.case_id.id,
                 'name': _('Ongoing Monitoring Required'),
-                'task_type': 'monitoring',
+                'task_type': 'risk_analysis',
                 'priority': 'medium',
                 'assigned_to': self.case_id.assigned_to.id if self.case_id.assigned_to else self.env.user.id,
                 'due_date': fields.Date.today() + timedelta(days=30),
@@ -205,8 +246,8 @@ class CaseDecision(models.Model):
         self.env['aml.case.task'].create({
             'case_id': self.case_id.id,
             'name': _('Case Escalated - Senior Review Required'),
-            'task_type': 'review',
-            'priority': 'critical',
+            'task_type': 'approval_required',
+            'priority': 'high',
             'assigned_to': self.env.ref('base.user_admin').id,  # Escalate to admin
             'due_date': fields.Date.today() + timedelta(days=3),
             'notes': _('This case has been escalated for senior review. Decision: %s\nRationale: %s') % (
@@ -221,7 +262,7 @@ class CaseDecision(models.Model):
         self.env['aml.case.task'].create({
             'case_id': self.case_id.id,
             'name': _('Additional Information Required'),
-            'task_type': 'data_gathering',
+            'task_type': 'data_collection',
             'priority': 'high',
             'assigned_to': self.case_id.assigned_to.id if self.case_id.assigned_to else self.env.user.id,
             'due_date': fields.Date.today() + timedelta(days=5),

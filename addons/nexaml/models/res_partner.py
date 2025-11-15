@@ -82,31 +82,52 @@ class ResPartner(models.Model):
         help='Computed: True if ownership ≥ 25%'
     )
 
-    # Risk Factor Fields
-    customer_risk = fields.Selection(
-        [('1', 'Low'), ('2', 'Medium'), ('3', 'High')],
-        string='Customer Risk Factor',
-        default='1',
-        help='Customer-specific risk factors (occupation, business type, etc.)'
+    # Risk Factor Fields (Float scores 1.0-3.0)
+    customer_risk = fields.Float(
+        string='Customer Risk Score',
+        compute='_compute_customer_risk',
+        store=True,
+        help='Customer-specific risk factors (PEP, sanctions, ownership structure, etc.)'
     )
-    geography_risk = fields.Selection(
-        [('1', 'Low'), ('2', 'Medium'), ('3', 'High')],
-        string='Geography Risk Factor',
-        default='1',
+    geography_risk = fields.Float(
+        string='Geography Risk Score',
+        compute='_compute_geography_risk',
+        store=True,
         help='Geographic risk based on country/jurisdiction'
     )
-    product_risk = fields.Selection(
-        [('1', 'Low'), ('2', 'Medium'), ('3', 'High')],
-        string='Product Risk Factor',
+    product_risk = fields.Float(
+        string='Product Risk Score',
         compute='_compute_product_risk',
         store=True,
         help='Highest risk level from associated products'
     )
-    channel_risk = fields.Selection(
-        [('1', 'Low'), ('2', 'Medium'), ('3', 'High')],
-        string='Channel Risk Factor',
-        default='1',
+    channel_risk = fields.Float(
+        string='Channel Risk Score',
+        compute='_compute_channel_risk',
+        store=True,
         help='Delivery channel risk (online, face-to-face, etc.)'
+    )
+
+    # Risk heatmap bars (HTML)
+    customer_risk_bar = fields.Html(
+        string='Customer Risk Bar',
+        compute='_compute_risk_bars',
+        sanitize=False
+    )
+    geography_risk_bar = fields.Html(
+        string='Geography Risk Bar',
+        compute='_compute_risk_bars',
+        sanitize=False
+    )
+    product_risk_bar = fields.Html(
+        string='Product Risk Bar',
+        compute='_compute_risk_bars',
+        sanitize=False
+    )
+    channel_risk_bar = fields.Html(
+        string='Channel Risk Bar',
+        compute='_compute_risk_bars',
+        sanitize=False
     )
 
     # Relationships
@@ -132,6 +153,7 @@ class ResPartner(models.Model):
         [('not_screened', 'Not Screened'),
          ('clear', 'Clear'),
          ('match', 'Match Found'),
+         ('false_positive', 'False Positive'),
          ('pending', 'Screening in Progress')],
         string='Sanctions Status',
         default='not_screened',
@@ -270,12 +292,21 @@ class ResPartner(models.Model):
             reasoning_lines = []
             reasoning_lines.append("=== CUSTOMER RISK ASSESSMENT ===\n")
 
+            # Helper to get risk label from score
+            def get_risk_label(score):
+                if score < 1.7:
+                    return 'Low'
+                elif score < 2.4:
+                    return 'Medium'
+                else:
+                    return 'High'
+
             # Component breakdown
             reasoning_lines.append("Risk Components:")
-            reasoning_lines.append(f"  • Customer Risk: {customer_risk} ({dict(partner._fields['customer_risk'].selection).get(str(int(customer_risk)))})")
-            reasoning_lines.append(f"  • Geography Risk: {geography_risk} ({dict(partner._fields['geography_risk'].selection).get(str(int(geography_risk)))})")
-            reasoning_lines.append(f"  • Product Risk: {product_risk} ({dict(partner._fields['product_risk'].selection).get(str(int(product_risk)))})")
-            reasoning_lines.append(f"  • Channel Risk: {channel_risk} ({dict(partner._fields['channel_risk'].selection).get(str(int(channel_risk)))})\n")
+            reasoning_lines.append(f"  • Customer Risk: {customer_risk:.2f} ({get_risk_label(customer_risk)})")
+            reasoning_lines.append(f"  • Geography Risk: {geography_risk:.2f} ({get_risk_label(geography_risk)})")
+            reasoning_lines.append(f"  • Product Risk: {product_risk:.2f} ({get_risk_label(product_risk)})")
+            reasoning_lines.append(f"  • Channel Risk: {channel_risk:.2f} ({get_risk_label(channel_risk)})\n")
 
             # Calculate inherent risk using weighted formula
             # (Customer × 0.30) + (Geography × 0.20) + (Product × 0.30) + (Channel × 0.20)
@@ -308,61 +339,76 @@ class ResPartner(models.Model):
 
             partner.residual_risk = residual_risk
 
-            # Scenario-Based Risk Overrides
+            # Scenario-Based Risk Overrides with CRA Settings
             override_high = False
+            override_block = False
             override_reason = []
 
+            # Get CRA settings for scenario-based actions
+            cra_settings = self.env['nexaml.cra.settings'].get_settings(partner.company_id.id)
+
             # Override 1: PEP Status (customer or related parties)
-            if partner.pep_status:
-                override_high = True
-                override_reason.append('Customer is PEP')
+            if cra_settings.pep_status_enabled and partner.pep_status:
+                if cra_settings.pep_status_action == 'block':
+                    override_block = True
+                    override_reason.append('Customer is PEP (BLOCKED by policy)')
+                else:  # elevate_high
+                    override_high = True
+                    override_reason.append('Customer is PEP')
 
             # Check UBOs and related parties for PEP status
-            if partner.child_ids:
+            if cra_settings.pep_status_enabled and partner.child_ids:
                 pep_contacts = partner.child_ids.filtered(lambda c: c.pep_status and c.is_ubo)
                 if pep_contacts:
-                    override_high = True
-                    override_reason.append('UBO is PEP')
+                    if cra_settings.pep_status_action == 'block':
+                        override_block = True
+                        override_reason.append('UBO is PEP (BLOCKED by policy)')
+                    else:
+                        override_high = True
+                        override_reason.append('UBO is PEP')
 
-            # Override 2: Sanctions Match or Open Case (customer or UBOs)
-            if partner.sanctions_status == 'match':
-                # Check if there are open screening cases
-                open_cases = self.env['aml.case'].search([
-                    ('partner_id', '=', partner.id),
-                    ('case_type', '=', 'screening'),
-                    ('state', 'in', ['open', 'investigating', 'under_review', 'pending_info'])
-                ])
-                if open_cases:
-                    override_high = True
-                    override_reason.append(f'Potential sanctions match ({len(open_cases)} open case(s))')
-                else:
-                    # Resolved cases - check decision
-                    resolved_cases = self.env['aml.case'].search([
-                        ('partner_id', '=', partner.id),
-                        ('case_type', '=', 'screening'),
-                        ('state', 'in', ['resolved_approved', 'resolved_rejected', 'closed'])
-                    ], order='closed_date desc', limit=1)
-                    if resolved_cases:
-                        case = resolved_cases[0]
-                        # If decision is not false positive, it's a confirmed match
-                        # Check latest decision outcome
-                        if case.decision_ids:
-                            latest_decision = case.decision_ids.sorted('decided_date', reverse=True)[0]
-                            if latest_decision.outcome != 'false_positive':
-                                override_high = True
-                                override_reason.append('Confirmed sanctions match')
-                        else:
-                            # No decisions recorded - assume confirmed match
-                            override_high = True
-                            override_reason.append('Confirmed sanctions match')
+            # Override 2: Confirmed Sanctions Match
+            if cra_settings.confirmed_sanctions_enabled and partner.sanctions_status == 'match':
+                # Check if confirmed via case decision
+                latest_decision = self.env['aml.case.decision'].search([
+                    ('case_id.partner_id', '=', partner.id),
+                    ('case_id.case_type', 'in', ['sanctions', 'pep', 'adverse_media', 'screening'])
+                ], order='decided_date desc', limit=1)
 
-            if partner.child_ids:
+                if latest_decision and latest_decision.outcome in ['true_positive', 'ongoing_monitoring', 'relationship_terminated']:
+                    if cra_settings.confirmed_sanctions_action == 'block':
+                        override_block = True
+                        override_reason.append('Confirmed sanctions match (BLOCKED by policy)')
+                    else:
+                        override_high = True
+                        override_reason.append('Confirmed sanctions match')
+
+            if cra_settings.confirmed_sanctions_enabled and partner.child_ids:
                 sanctioned_contacts = partner.child_ids.filtered(
                     lambda c: c.sanctions_status == 'match' and c.is_ubo
                 )
                 if sanctioned_contacts:
-                    override_high = True
-                    override_reason.append('UBO sanctions match')
+                    if cra_settings.confirmed_sanctions_action == 'block':
+                        override_block = True
+                        override_reason.append('UBO sanctions match (BLOCKED by policy)')
+                    else:
+                        override_high = True
+                        override_reason.append('UBO sanctions match')
+
+            # Apply block override first (highest priority)
+            if override_block:
+                partner.risk_level = 'blocked'
+                partner.risk_score = 0.0
+                partner.residual_risk = 0.0
+                partner.residual_risk_score = 0.0
+                reasoning_lines.append("🚫 CUSTOMER BLOCKED:")
+                for reason in override_reason:
+                    reasoning_lines.append(f"  • {reason}")
+                reasoning_lines.append("  Customer relationship blocked by policy.\n")
+                partner.risk_reasoning = '\n'.join(reasoning_lines)
+                _logger.warning('Customer blocked for partner %s: %s',
+                              partner.name, ', '.join(override_reason))
+                continue
 
             # Apply override if triggered
             if override_high:
@@ -393,16 +439,145 @@ class ResPartner(models.Model):
 
             partner.risk_reasoning = '\n'.join(reasoning_lines)
 
+    @api.depends('pep_status', 'sanctions_status', 'is_company', 'child_ids.pep_status', 'child_ids.is_ubo', 'child_ids.sanctions_status')
+    def _compute_customer_risk(self):
+        """Calculate customer risk using weighted scoring like nex-systems."""
+        for partner in self:
+            # If confirmed sanctions match, return 3.0 immediately
+            if partner.sanctions_status == 'match':
+                latest_decision = self.env['aml.case.decision'].search([
+                    ('case_id.partner_id', '=', partner.id),
+                    ('case_id.case_type', 'in', ['sanctions', 'pep', 'adverse_media'])
+                ], order='decided_date desc', limit=1)
+
+                if latest_decision and latest_decision.outcome in ['true_positive', 'ongoing_monitoring', 'relationship_terminated']:
+                    partner.customer_risk = 3.0
+                    continue
+
+            # Weighted scoring
+            weighted_sum = 0.0
+            total_weight = 0.0
+
+            # Customer type (15%): individual = 1.0, company = 1.5
+            customer_type_score = 1.0 if not partner.is_company else 1.5
+            weighted_sum += customer_type_score * 0.15
+            total_weight += 0.15
+
+            # PEP exposure (30%): none = 1.0, domestic = 2.0, foreign = 3.0
+            if partner.pep_status:
+                pep_score = 3.0  # Assume foreign PEP for now
+            elif partner.is_company and partner.child_ids.filtered(lambda c: c.pep_status and c.is_ubo):
+                pep_score = 2.5  # UBO is PEP
+            else:
+                pep_score = 1.0
+            weighted_sum += pep_score * 0.30
+            total_weight += 0.30
+
+            # Ownership structure (10%): transparent = 1.0, opaque = 2.5
+            if partner.is_company:
+                # Check if has many related parties (proxy for complex ownership)
+                ownership_score = 2.5 if len(partner.child_ids) > 5 else 1.0
+                weighted_sum += ownership_score * 0.10
+                total_weight += 0.10
+
+            # Country risk (15%) - will be same as geography_risk
+            country_score = 1.0  # Default, will compute properly in geography
+            weighted_sum += country_score * 0.15
+            total_weight += 0.15
+
+            # Residency (10%): local = 1.0, foreign = 2.0
+            # For now, assume local if country matches organization country
+            residency_score = 1.0
+            weighted_sum += residency_score * 0.10
+            total_weight += 0.10
+
+            partner.customer_risk = round(weighted_sum / total_weight if total_weight > 0 else 2.0, 2)
+
+    @api.depends('country_id', 'child_ids.country_id', 'child_ids.is_ubo')
+    def _compute_geography_risk(self):
+        """Calculate geography risk with decimal scoring."""
+        # Country risk scores: 1.0 = low, 2.0 = medium, 3.0 = high
+        HIGH_RISK_COUNTRIES = {'AF': 3.0, 'IR': 3.0, 'KP': 3.0, 'SY': 3.0, 'MM': 2.8, 'CU': 2.7, 'SD': 2.9, 'SO': 2.9}
+        MEDIUM_RISK_COUNTRIES = {'PK': 2.3, 'IQ': 2.5, 'YE': 2.4, 'LY': 2.4, 'RU': 2.2, 'BY': 2.1}
+
+        for partner in self:
+            def get_country_score(country_code):
+                if not country_code:
+                    return 2.0
+                if country_code in HIGH_RISK_COUNTRIES:
+                    return HIGH_RISK_COUNTRIES[country_code]
+                if country_code in MEDIUM_RISK_COUNTRIES:
+                    return MEDIUM_RISK_COUNTRIES[country_code]
+                return 1.0  # Low risk by default
+
+            # Incorporation/residence country (50%)
+            incorporation_score = get_country_score(partner.country_id.code if partner.country_id else None)
+
+            # Nationality (30% for companies, 50% for individuals)
+            nationality_score = incorporation_score  # Use same for now
+
+            # UBO countries (20% for companies)
+            ubo_score = 1.0
+            if partner.is_company and partner.child_ids:
+                ubos = partner.child_ids.filtered(lambda c: c.is_ubo)
+                if ubos:
+                    ubo_scores = [get_country_score(ubo.country_id.code if ubo.country_id else None) for ubo in ubos]
+                    ubo_score = max(ubo_scores) if ubo_scores else 1.0
+
+            # Weighted calculation
+            if partner.is_company:
+                geography_score = (incorporation_score * 0.5) + (nationality_score * 0.3) + (ubo_score * 0.2)
+            else:
+                geography_score = (incorporation_score * 0.5) + (nationality_score * 0.5)
+
+            partner.geography_risk = round(geography_score, 2)
+
     @api.depends('product_ids', 'product_ids.risk_score')
     def _compute_product_risk(self):
         """Calculate product risk as highest risk from all products."""
         for partner in self:
             if partner.product_ids:
-                # Get highest risk score
+                # Get highest risk score (assuming products have risk_score field)
                 risk_scores = partner.product_ids.mapped('risk_score')
-                partner.product_risk = max(risk_scores) if risk_scores else '1'
+                partner.product_risk = round(max(risk_scores), 2) if risk_scores else 2.0
             else:
-                partner.product_risk = '1'
+                partner.product_risk = 2.0  # Default medium risk if no products
+
+    def _compute_channel_risk(self):
+        """Calculate channel risk with default scoring."""
+        for partner in self:
+            # Default to low risk - can be extended when onboarding channel data is added
+            # In future: check partner.onboarding_channel_id.risk_score
+            partner.channel_risk = 1.0
+
+    @api.depends('customer_risk', 'geography_risk', 'product_risk', 'channel_risk')
+    def _compute_risk_bars(self):
+        """Generate HTML for single-color risk heatmap bars."""
+        def get_bar_color(score):
+            """Return color based on risk score."""
+            if score < 1.7:
+                return '#86efac'  # Green
+            elif score < 2.4:
+                return '#fde047'  # Yellow
+            else:
+                return '#ef4444'  # Red
+
+        for partner in self:
+            # Single bar for customer risk
+            color = get_bar_color(partner.customer_risk or 1.0)
+            partner.customer_risk_bar = f'<div style="width: 100%; height: 24px; border-radius: 6px; background-color: {color};"></div>'
+
+            # Single bar for geography risk
+            color = get_bar_color(partner.geography_risk or 1.0)
+            partner.geography_risk_bar = f'<div style="width: 100%; height: 24px; border-radius: 6px; background-color: {color};"></div>'
+
+            # Single bar for product risk
+            color = get_bar_color(partner.product_risk or 2.0)
+            partner.product_risk_bar = f'<div style="width: 100%; height: 24px; border-radius: 6px; background-color: {color};"></div>'
+
+            # Single bar for channel risk
+            color = get_bar_color(partner.channel_risk or 1.0)
+            partner.channel_risk_bar = f'<div style="width: 100%; height: 24px; border-radius: 6px; background-color: {color};"></div>'
 
     @api.depends('risk_level')
     def _compute_edd_required(self):
@@ -622,44 +797,13 @@ class ResPartner(models.Model):
             'screening_data': json.dumps(result, indent=2),
         }
 
-        screening = self.env['aml.screening'].create(screening_vals)
+        screening = self.env['aml.screening'].sudo().create(screening_vals)
         _logger.info('Created screening record %s for partner %s (score: %.2f)',
                      screening.name, self.name, score)
 
-        # Create case for sanctions match
-        case_description = f"""
-Sanctions screening match detected:
-
-Match Score: {score:.2f}%
-Matched Name: {matched_name}
-Matched Entity ID: {entity.get('id')}
-Datasets: {datasets}
-Countries: {matched_countries}
-Topics: {', '.join(topics)}
-
-Customer: {self.name}
-Customer Type: {'Company' if self.is_company else 'Person'}
-Country: {self.country_id.name if self.country_id else 'N/A'}
-        """
-
-        # Determine priority based on score and topics
-        priority = 'critical' if score >= 90 or 'sanction' in topics else 'high'
-
-        case_vals = {
-            'partner_id': self.id,
-            'case_type': 'screening',
-            'state': 'open',
-            'priority': priority,
-            'description': case_description.strip(),
-            'assigned_to': self.env.user.id,
-        }
-
-        case = self.env['aml.case'].create(case_vals)
-        _logger.info('Created case %s for sanctions match on partner %s', case.name, self.name)
-
-        # Post message to partner
+        # Post message to partner (case will be auto-created by screening model)
         self.message_post(
-            body=_('Sanctions match detected (score: %.2f%%). Case %s created for investigation.') % (score, case.name),
+            body=_('Sanctions match detected (score: %.2f%%). Case created for investigation.') % score,
             subject=_('Sanctions Match'),
             message_type='notification',
         )

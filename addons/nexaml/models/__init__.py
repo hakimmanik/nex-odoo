@@ -15,8 +15,10 @@ from . import case_note
 from . import case_task
 from . import ewra_run
 from . import ewra_pillar
+from . import ewra_settings
 from . import ewra_settings_snapshot
 from . import ewra_narrative
+from . import cra_settings
 from . import pdf_actions
 from . import account_move
 from . import account_payment_method

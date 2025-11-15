@@ -41,6 +41,16 @@
         <field name="binding_type">report</field>
     </record>
 
+    <record id="action_report_ewra" model="ir.actions.report">
+        <field name="name">EWRA Comprehensive Report</field>
+        <field name="model">nexaml.ewra.run</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">nexaml.report_ewra_comprehensive</field>
+        <field name="report_file">nexaml.report_ewra_comprehensive</field>
+        <field name="binding_model_id" ref="model_nexaml_ewra_run"/>
+        <field name="binding_type">report</field>
+    </record>
+
     <!-- SAR Report Template -->
     <template id="report_sar_template">
         <t t-call="web.html_container">
@@ -341,6 +351,115 @@
                                 </t>
                             </tbody>
                         </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- EWRA Report Template -->
+    <template id="ewra_pdf_report">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="ewra">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">Enterprise-Wide Risk Assessment</h2>
+
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <strong>Assessment Name:</strong> <span t-field="ewra.name"/>
+                            </div>
+                            <div class="col-6">
+                                <strong>Period:</strong> <span t-field="ewra.period_start"/> to <span t-field="ewra.period_end"/>
+                            </div>
+                        </div>
+
+                        <h4 class="mt-4">Overall Risk Summary</h4>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th style="width: 30%">Overall Risk Level</th>
+                                <td>
+                                    <span class="badge" t-attf-class="badge-{{ewra.overall_risk_level == 'high' and 'danger' or ewra.overall_risk_level == 'medium' and 'warning' or 'success'}}">
+                                        <span t-esc="ewra.overall_risk_level.upper() if ewra.overall_risk_level else 'N/A'"/>
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Overall Inherent Risk</th>
+                                <td><span t-esc="'%.2f' % ewra.overall_inherent_score"/></td>
+                            </tr>
+                            <tr>
+                                <th>Overall Residual Risk</th>
+                                <td><span t-esc="'%.2f' % ewra.overall_residual_score"/></td>
+                            </tr>
+                            <tr>
+                                <th>Status</th>
+                                <td><span t-field="ewra.status"/></td>
+                            </tr>
+                            <tr t-if="ewra.approved_by">
+                                <th>Approved By</th>
+                                <td><span t-field="ewra.approved_by"/> on <span t-field="ewra.approved_date"/></td>
+                            </tr>
+                        </table>
+
+                        <h4 class="mt-4">Risk Pillars Assessment</h4>
+                        <t t-foreach="ewra.pillar_ids" t-as="pillar">
+                            <h5 class="mt-3"><span t-field="pillar.pillar"/></h5>
+                            <table class="table table-sm table-bordered">
+                                <tr>
+                                    <th style="width: 30%">Risk Distribution</th>
+                                    <td>
+                                        Low: <span t-esc="'%.1f' % pillar.low_pct"/>% |
+                                        Medium: <span t-esc="'%.1f' % pillar.medium_pct"/>% |
+                                        High: <span t-esc="'%.1f' % pillar.high_pct"/>%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Inherent Risk</th>
+                                    <td>
+                                        <span t-esc="'%.2f' % pillar.inherent_score"/> -
+                                        <span class="badge" t-attf-class="badge-{{pillar.inherent_label == 'high' and 'danger' or pillar.inherent_label == 'medium' and 'warning' or 'success'}}">
+                                            <span t-esc="pillar.inherent_label.upper() if pillar.inherent_label else 'N/A'"/>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Control Effectiveness</th>
+                                    <td>
+                                        <span t-esc="'%.0f' % pillar.control_pct"/>%
+                                        (<span t-field="pillar.control_band"/>)
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Residual Risk</th>
+                                    <td>
+                                        <span t-esc="'%.2f' % pillar.residual_score"/> -
+                                        <span class="badge" t-attf-class="badge-{{pillar.residual_label == 'high' and 'danger' or pillar.residual_label == 'medium' and 'warning' or 'success'}}">
+                                            <span t-esc="pillar.residual_label.upper() if pillar.residual_label else 'N/A'"/>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr t-if="pillar.control_reason">
+                                    <th>Control Justification</th>
+                                    <td><span t-field="pillar.control_reason"/></td>
+                                </tr>
+                                <tr t-if="pillar.notes">
+                                    <th>Assessment Notes</th>
+                                    <td><span t-field="pillar.notes"/></td>
+                                </tr>
+                            </table>
+                        </t>
+
+                        <t t-if="ewra.narrative_id">
+                            <div class="mt-4" t-if="ewra.narrative_id.foreword">
+                                <h4>Foreword</h4>
+                                <div t-field="ewra.narrative_id.foreword"/>
+                            </div>
+                            <div class="mt-4" t-if="ewra.narrative_id.conclusion">
+                                <h4>Conclusion</h4>
+                                <div t-field="ewra.narrative_id.conclusion"/>
+                            </div>
+                        </t>
                     </div>
                 </t>
             </t>

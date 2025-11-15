@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Extend Partner Form with NexAML Tab -->
     <record id="view_partner_form" model="ir.ui.view">
         <field name="name">res.partner.form.aml</field>
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
             <!-- Add CRA score display after category_id -->
             <field name="category_id" position="after">
@@ -66,14 +66,10 @@
                             <field name="is_company" invisible="1"/>
                             <field name="customer_rank" invisible="1"/>
                             <field name="company_type"/>
-                            <field name="create_date" readonly="1"/>
-                            <field name="write_date" readonly="1"/>
-                            <field name="vat" invisible="company_type == 'person'"/>
+                            <field name="vat" invisible="company_type == 'person'" placeholder="Tax ID / VAT Number"/>
                         </group>
                         <group>
-                            <field name="screening_count" readonly="1"/>
-                            <field name="last_screening_date" readonly="1"/>
-                            <field name="country_id" invisible="company_type == 'company'"/>
+                            <field name="country_id" invisible="company_type == 'company'" placeholder="Select country"/>
                         </group>
                     </group>
 
@@ -81,19 +77,17 @@
                     <separator string="Employment &amp; Financial Information" colspan="4" invisible="company_type == 'company'"/>
                     <group name="employment_financial" invisible="company_type == 'company'">
                         <group>
-                            <field name="occupation"/>
-                            <field name="employer_name"/>
-                            <field name="employer_address"/>
+                            <field name="occupation" placeholder="e.g. Software Engineer, Doctor, etc."/>
+                            <field name="employer_name" placeholder="Company or organization name"/>
+                            <field name="employer_address" placeholder="Employer's business address"/>
                         </group>
                         <group>
-                            <field name="source_of_funds"/>
-                            <field name="source_of_funds_other" invisible="source_of_funds != 'other'"/>
-                            <field name="annual_income_range"/>
+                            <field name="source_of_funds" placeholder="Select source of funds"/>
+                            <field name="source_of_funds_other" invisible="source_of_funds != 'other'" placeholder="Specify other source"/>
+                            <field name="annual_income_range" placeholder="Select income range"/>
                         </group>
                     </group>
 
-                    <!-- Risk Assessment Section -->
-                    <separator string="Risk Assessment" colspan="4"/>
                     <!-- Summary Section -->
                     <group name="summary_section">
                         <group string="Risk Summary" colspan="2">
@@ -108,20 +102,19 @@
                             <group>
                                 <field name="edd_required" widget="boolean_toggle" string="EDD Required"/>
                                 <field name="pep_status" widget="boolean_toggle" string="PEP Status"/>
-                                <field name="last_assessment_date"/>
-                                <field name="next_review_date"/>
+                                <field name="last_assessment_date" readonly="1"/>
+                                <field name="next_review_date" readonly="1"/>
                             </group>
                         </group>
                     </group>
 
                     <!-- Actions -->
-                    <div class="oe_button_box" name="nexaml_actions" style="margin: 10px 0;">
+                    <div class="oe_button_box" name="nexaml_actions" style="margin: 20px 0; display: flex; gap: 10px;">
                         <button name="action_assess_risk"
                                 string="Calculate Risk"
                                 type="object"
                                 class="btn-primary"
-                                icon="fa-calculator"
-                                style="margin-right: 5px;"/>
+                                icon="fa-calculator"/>
                         <button name="action_screen_sanctions"
                                 string="Screen for Sanctions"
                                 type="object"
@@ -129,50 +122,43 @@
                                 icon="fa-search"/>
                     </div>
 
-                    <!-- Risk Component Visualization -->
-                    <group string="Risk Components">
-                        <group>
-                            <label for="customer_risk" string="Customer (30%)"/>
-                            <div>
-                                <field name="customer_risk" widget="badge" nolabel="1"
-                                       decoration-success="customer_risk &lt;= 1.6"
-                                       decoration-warning="customer_risk &gt; 1.6 and customer_risk &lt;= 2.3"
-                                       decoration-danger="customer_risk &gt; 2.3"
-                                       style="width: 100%; height: 24px; border-radius: 4px; display: block; text-align: center; line-height: 24px;"/>
-                            </div>
-                        </group>
-                        <group>
-                            <label for="geography_risk" string="Geography (20%)"/>
-                            <div>
-                                <field name="geography_risk" widget="badge" nolabel="1"
-                                       decoration-success="geography_risk &lt;= 1.6"
-                                       decoration-warning="geography_risk &gt; 1.6 and geography_risk &lt;= 2.3"
-                                       decoration-danger="geography_risk &gt; 2.3"
-                                       style="width: 100%; height: 24px; border-radius: 4px; display: block; text-align: center; line-height: 24px;"/>
-                            </div>
-                        </group>
-                    </group>
-                    <group>
-                        <group>
-                            <label for="product_risk" string="Product (30%)"/>
-                            <div>
-                                <field name="product_risk" widget="badge" nolabel="1"
-                                       decoration-success="product_risk &lt;= 1.6"
-                                       decoration-warning="product_risk &gt; 1.6 and product_risk &lt;= 2.3"
-                                       decoration-danger="product_risk &gt; 2.3"
-                                       style="width: 100%; height: 24px; border-radius: 4px; display: block; text-align: center; line-height: 24px;"/>
-                            </div>
-                        </group>
-                        <group>
-                            <label for="channel_risk" string="Channel (20%)"/>
-                            <div>
-                                <field name="channel_risk" widget="badge" nolabel="1"
-                                       decoration-success="channel_risk &lt;= 1.6"
-                                       decoration-warning="channel_risk &gt; 1.6 and channel_risk &lt;= 2.3"
-                                       decoration-danger="channel_risk &gt; 2.3"
-                                       style="width: 100%; height: 24px; border-radius: 4px; display: block; text-align: center; line-height: 24px;"/>
-                            </div>
-                        </group>
+                    <!-- Risk Component Heatmap -->
+                    <group string="Risk Components" col="2">
+                        <label for="customer_risk" string="Customer (30%)"/>
+                        <div class="o_row" style="display: flex; align-items: center; gap: 8px;">
+                            <field name="customer_risk" widget="badge"
+                                   decoration-success="customer_risk &lt; 1.7"
+                                   decoration-warning="customer_risk &gt;= 1.7 and customer_risk &lt; 2.4"
+                                   decoration-danger="customer_risk &gt;= 2.4"/>
+                            <field name="customer_risk_bar" widget="html" nolabel="1" style="flex: 1;"/>
+                        </div>
+
+                        <label for="geography_risk" string="Geography (20%)"/>
+                        <div class="o_row" style="display: flex; align-items: center; gap: 8px;">
+                            <field name="geography_risk" widget="badge"
+                                   decoration-success="geography_risk &lt; 1.7"
+                                   decoration-warning="geography_risk &gt;= 1.7 and geography_risk &lt; 2.4"
+                                   decoration-danger="geography_risk &gt;= 2.4"/>
+                            <field name="geography_risk_bar" widget="html" nolabel="1" style="flex: 1;"/>
+                        </div>
+
+                        <label for="product_risk" string="Product (30%)"/>
+                        <div class="o_row" style="display: flex; align-items: center; gap: 8px;">
+                            <field name="product_risk" widget="badge"
+                                   decoration-success="product_risk &lt; 1.7"
+                                   decoration-warning="product_risk &gt;= 1.7 and product_risk &lt; 2.4"
+                                   decoration-danger="product_risk &gt;= 2.4"/>
+                            <field name="product_risk_bar" widget="html" nolabel="1" style="flex: 1;"/>
+                        </div>
+
+                        <label for="channel_risk" string="Channel (20%)"/>
+                        <div class="o_row" style="display: flex; align-items: center; gap: 8px;">
+                            <field name="channel_risk" widget="badge"
+                                   decoration-success="channel_risk &lt; 1.7"
+                                   decoration-warning="channel_risk &gt;= 1.7 and channel_risk &lt; 2.4"
+                                   decoration-danger="channel_risk &gt;= 2.4"/>
+                            <field name="channel_risk_bar" widget="html" nolabel="1" style="flex: 1;"/>
+                        </div>
                     </group>
 
                     <group name="compliance_section">
@@ -182,11 +168,10 @@
                                    decoration-success="sanctions_status == 'clear'"
                                    decoration-danger="sanctions_status == 'match'"
                                    decoration-info="sanctions_status == 'pending'"/>
-                            <field name="last_screening_date"/>
-                            <field name="screening_count" readonly="1"/>
+                            <field name="last_screening_date" readonly="1"/>
                         </group>
                         <group string="KYC &amp; Monitoring">
-                            <field name="kyc_expiry_date"/>
+                            <field name="kyc_expiry_date" placeholder="Select KYC expiry date"/>
                             <field name="kyc_expired" readonly="1" widget="boolean"
                                    decoration-danger="kyc_expired == True"/>
                             <field name="on_watch_list" widget="boolean_toggle"/>
@@ -196,8 +181,8 @@
                     </group>
 
                     <!-- Related Parties (for companies) -->
-                    <separator string="Related Parties (Directors, Shareholders, UBOs)" colspan="4" invisible="company_type == 'person'"/>
-                    <field name="child_ids" invisible="company_type == 'person'" context="{'default_parent_id': id}">
+                    <separator string="Related Parties (Directors, Shareholders, UBOs)" colspan="4" invisible="is_company == False"/>
+                    <field name="child_ids" invisible="is_company == False" context="{'default_parent_id': id}">
                         <list editable="bottom">
                             <field name="name"/>
                             <field name="party_type"/>

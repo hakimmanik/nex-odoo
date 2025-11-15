@@ -1,0 +1,804 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Comprehensive EWRA Report Template matching nex-systems exactly -->
+    <template id="report_ewra_comprehensive">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="ewra">
+
+                <!-- Set variables -->
+                <t t-set="company" t-value="ewra.company_id"/>
+                <t t-set="pillars" t-value="ewra.pillar_ids.sorted(lambda p: ['customer', 'geography', 'products', 'delivery', 'supplier'].index(p.pillar) if p.pillar in ['customer', 'geography', 'products', 'delivery', 'supplier'] else 99)"/>
+                <t t-set="customer_pillar" t-value="pillars.filtered(lambda p: p.pillar == 'customer')[:1]"/>
+                <t t-set="geography_pillar" t-value="pillars.filtered(lambda p: p.pillar == 'geography')[:1]"/>
+                <t t-set="products_pillar" t-value="pillars.filtered(lambda p: p.pillar == 'products')[:1]"/>
+                <t t-set="delivery_pillar" t-value="pillars.filtered(lambda p: p.pillar == 'delivery')[:1]"/>
+                <t t-set="supplier_pillar" t-value="pillars.filtered(lambda p: p.pillar == 'supplier')[:1]"/>
+                <t t-set="include_supplier" t-value="bool(supplier_pillar)"/>
+                <t t-set="settings" t-value="ewra.settings_snapshot_id or env['nexaml.ewra.settings'].get_settings(company.id)"/>
+
+                <!-- Calculate overall risk -->
+                <t t-set="pillar_weights" t-value="{'customer': 0.4, 'geography': 0.2, 'products': 0.25, 'delivery': 0.15, 'supplier': 0}"/>
+                <t t-set="core_pillars" t-value="pillars.filtered(lambda p: p.pillar != 'supplier')"/>
+                <t t-set="total_weight" t-value="sum([pillar_weights.get(p.pillar, 0) for p in core_pillars])"/>
+                <t t-set="weighted_sum" t-value="sum([p.residual_score * pillar_weights.get(p.pillar, 0) for p in core_pillars])"/>
+                <t t-set="avg_residual" t-value="weighted_sum / total_weight if total_weight > 0 else 0"/>
+                <t t-set="overall_score" t-value="'%.2f' % avg_residual if avg_residual > 0 else '-'"/>
+                <t t-set="medium_threshold" t-value="settings.risk_threshold_medium if settings else 1.7"/>
+                <t t-set="high_threshold" t-value="settings.risk_threshold_high if settings else 2.4"/>
+                <t t-set="overall_label" t-value="'High' if avg_residual >= high_threshold else ('Medium' if avg_residual >= medium_threshold else 'Low')"/>
+
+                <head>
+                    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        html, body {
+                            font-family: 'Outfit', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                            line-height: 1.5;
+                            font-size: 10pt;
+                        }
+                        @page {
+                            size: A4 portrait;
+                            margin: 15mm 25mm 20mm 25mm;
+                        }
+                        .page-break { page-break-after: always; break-after: page; }
+                        .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+                        body > div:not(.cover-page) {
+                            padding: 0 8rem;
+                        }
+                        ul, ol { margin: 0.5rem 0 1rem 0; padding-left: 1.25rem; list-style-position: outside; }
+                        ul { list-style-type: disc !important; }
+                        ol { list-style-type: decimal !important; }
+                        ul li, ol li { display: list-item; margin: 0.4rem 0; line-height: 1.4; }
+                        .cover-page {
+                            min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between;
+                            padding: 4rem 8rem; position: relative; background: #ffffff;
+                        }
+                        .cover-accent-line { width: 60px; height: 3px; background: #3b82f6; margin: 1rem 0; }
+                        .cover-color-border {
+                            position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+                            background: linear-gradient(180deg, #ef4444 0%, #ef4444 33%, #3b82f6 33%, #3b82f6 66%, #eab308 66%, #eab308 100%);
+                        }
+                        table { width: 100%; border-collapse: collapse; margin: 1rem 0; table-layout: fixed; }
+                        th, td { padding: 0.5rem 0.6rem; text-align: left; border: 1px solid #64748b; font-size: 9.5pt; word-break: break-word; }
+                        th { background-color: #cbd5e1; font-weight: 600; }
+                        .signature-box { border: 1px solid #94a3b8; height: 70px; margin: 0.5rem 0; }
+                        h1 { font-size: 20pt; font-weight: 700; line-height: 1.3; margin: 1rem 0; }
+                        h2 { font-size: 13pt; font-weight: 700; margin: 2rem 0 1rem 0; text-align: center; color: #1e293b; text-transform: uppercase; letter-spacing: 0.05em; }
+                        h3 { font-size: 11pt; font-weight: 600; margin: 1.5rem 0 0.75rem 0; }
+                        p { margin: 0.75rem 0; text-align: justify; line-height: 1.6; }
+                        .toc-item { display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px dotted #94a3b8; }
+                        h2.section-title {
+                            font-size: 12pt; font-weight: 900; text-align: center; text-transform: uppercase;
+                            letter-spacing: 0.07em; background: #e2e8f0; color: #0f172a; padding: 1rem 0 0.75rem 0;
+                            border-radius: 0.25rem; margin: 0 0 1.5rem 0;
+                        }
+                        .section-content {
+                            margin: 2rem 0;
+                        }
+                        .badge-low { background-color: #dcfce7; color: #166534; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-weight: 600; text-transform: uppercase; }
+                        .badge-medium { background-color: #fef3c7; color: #854d0e; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-weight: 600; text-transform: uppercase; }
+                        .badge-high { background-color: #fee2e2; color: #991b1b; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-weight: 600; text-transform: uppercase; }
+                    </style>
+                </head>
+
+                <body class="bg-white text-slate-800">
+
+                    <!-- Cover Page -->
+                    <div class="cover-page page-break">
+                        <div class="cover-color-border"></div>
+
+                        <div>
+                            <!-- Logo placeholder - can add company logo here -->
+                        </div>
+
+                        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: 500px;">
+                            <div style="margin-bottom: 3rem;">
+                                <p style="font-size: 8pt; color: #475569; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 1.5rem 0;">
+                                    Compliance Report
+                                </p>
+
+                                <h1 style="font-size: 16pt; font-weight: 600; line-height: 1.5; margin: 0 0 0.5rem 0; color: #1e293b;">
+                                    Enterprise-Wide Risk Assessment
+                                </h1>
+
+                                <div class="cover-accent-line"></div>
+
+                                <p style="font-size: 11pt; font-weight: 500; color: #334155; margin: 1.5rem 0 0.5rem 0; line-height: 1.5;">
+                                    Money Laundering / Terrorism Financing /<br/>Proliferation Financing Risk Assessment (EWRA)
+                                </p>
+
+                                <p style="font-size: 12pt; font-weight: 500; color: #334155; margin: 1.5rem 0 0 0;">
+                                    <span t-esc="ewra.period_start.strftime('%B %Y')"/>
+                                </p>
+                            </div>
+
+                            <div>
+                                <div style="margin-bottom: 1.5rem;">
+                                    <p style="font-size: 8pt; color: #475569; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 0.4rem 0;">Company Name</p>
+                                    <p style="font-size: 10pt; color: #1e293b; font-weight: 600; margin: 0;"><span t-field="company.name"/></p>
+                                </div>
+
+                                <div>
+                                    <p style="font-size: 8pt; color: #475569; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 0.4rem 0;">Assessment Period</p>
+                                    <p style="font-size: 9pt; color: #334155; font-weight: 500; margin: 0;">
+                                        <span t-esc="ewra.period_start.strftime('%d %b %Y')"/> to <span t-esc="ewra.period_end.strftime('%d %b %Y')"/>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p style="font-size: 9pt; color: #334155; font-weight: 500; margin: 0 0 0.3rem 0;">
+                                Confidential &amp; Proprietary
+                            </p>
+                            <p style="font-size: 8pt; color: #334155; font-weight: 500; margin: 0;">
+                                Powered by <span style="font-weight: 600; color: #3b82f6;">nex.systems</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Table of Contents -->
+                    <div class="page-break">
+                        <h2 class="section-title">CONTENTS</h2>
+                        <div style="margin-top: 2rem;">
+                            <div class="toc-item"><span>1. REPORT INFORMATION</span><span>3</span></div>
+                            <div class="toc-item"><span>2. FOREWORD BY THE COMPLIANCE OFFICER</span><span>4</span></div>
+                            <div class="toc-item"><span>3. COMPANY OVERVIEW</span><span>5</span></div>
+                            <div class="toc-item"><span>4. PURPOSE OF RISK ASSESSMENT</span><span>6</span></div>
+                            <div class="toc-item"><span>5. FREQUENCY OF RISK ASSESSMENT</span><span>6</span></div>
+                            <div class="toc-item"><span>6. RISK ASSESSMENT PROCESS</span><span>7</span></div>
+                            <div class="toc-item"><span>7. RISK FACTORS</span><span>8</span></div>
+                            <div class="toc-item"><span>8. RISK VISUALIZATION</span><span>8</span></div>
+                            <div class="toc-item"><span>9. CUSTOMER RISK</span><span>9</span></div>
+                            <t t-if="include_supplier">
+                                <div class="toc-item"><span>10. SUPPLIER RISK</span><span>10</span></div>
+                            </t>
+                            <div class="toc-item"><span><t t-if="include_supplier">11</t><t t-else="">10</t>. GEOGRAPHICAL RISK</span><span><t t-if="include_supplier">11</t><t t-else="">10</t></span></div>
+                            <div class="toc-item"><span><t t-if="include_supplier">12</t><t t-else="">11</t>. PRODUCT RISK</span><span><t t-if="include_supplier">12</t><t t-else="">11</t></span></div>
+                            <div class="toc-item"><span><t t-if="include_supplier">13</t><t t-else="">12</t>. TRANSACTION &amp; PAYMENT MODE RISK</span><span><t t-if="include_supplier">13</t><t t-else="">12</t></span></div>
+                            <div class="toc-item"><span><t t-if="include_supplier">14</t><t t-else="">13</t>. ONBOARDING CHANNEL RISK</span><span><t t-if="include_supplier">14</t><t t-else="">13</t></span></div>
+                            <div class="toc-item"><span><t t-if="include_supplier">15</t><t t-else="">14</t>. INHERENT RISK ASSESSMENT RESULT</span><span><t t-if="include_supplier">15</t><t t-else="">14</t></span></div>
+                            <div class="toc-item"><span><t t-if="include_supplier">16</t><t t-else="">15</t>. INTERNAL CONTROLS</span><span><t t-if="include_supplier">16</t><t t-else="">15</t></span></div>
+                            <div class="toc-item"><span><t t-if="include_supplier">17</t><t t-else="">16</t>. SETTINGS SNAPSHOT (APPENDIX)</span><span><t t-if="include_supplier">17</t><t t-else="">16</t></span></div>
+                            <div class="toc-item"><span><t t-if="include_supplier">18</t><t t-else="">17</t>. CONCLUSION</span><span><t t-if="include_supplier">18</t><t t-else="">17</t></span></div>
+                        </div>
+                    </div>
+
+                    <!-- 1. Report Information -->
+                    <div class="page-break">
+                        <h2 class="section-title">1. REPORT INFORMATION</h2>
+
+                        <table style="margin-top: 2rem;">
+                            <colgroup>
+                                <col style="width: 50%;"/>
+                                <col style="width: 50%;"/>
+                            </colgroup>
+                            <tr>
+                                <th colspan="2" style="text-align: center; padding: 1rem;">Report Title</th>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="text-align: center; padding: 1rem; font-size: 8.5pt; line-height: 1.3;">
+                                    Enterprise-Wide Money Laundering /Terrorism Financing/Proliferation (ML/TF/PF) Risk Assessment Report
+                                </td>
+                            </tr>
+                            <tr>
+                                <th colspan="2" style="text-align: center; padding: 1rem;">Report Submitted on</th>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="text-align: center; padding: 1rem;">
+                                    <span t-esc="datetime.datetime.now().strftime('%d %B %Y')"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th colspan="2" style="text-align: center; padding: 1rem;">ML/TF/PF Risk Assessment Report Prepared by</th>
+                            </tr>
+                            <tr>
+                                <td style="padding: 2rem; width: 50%;">
+                                    <div>Name:</div>
+                                    <div style="margin-top: 0.5rem;">Designation: Compliance Officer</div>
+                                </td>
+                                <td style="padding: 2rem; width: 50%;">
+                                    <div>Sign:</div>
+                                    <div class="signature-box" style="margin-top: 0.5rem;"></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th colspan="2" style="text-align: center; padding: 1rem;">ML/TF/PF Risk Assessment Report Reviewed and Approved by</th>
+                            </tr>
+                            <tr>
+                                <td style="padding: 2rem; width: 50%;">
+                                    <div>Name: Designation: Owner</div>
+                                </td>
+                                <td style="padding: 2rem; width: 50%;">
+                                    <div>Sign:</div>
+                                    <div class="signature-box" style="margin-top: 0.5rem;"></div>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <div style="margin-top: 3rem; text-align: center;">
+                            <p style="font-weight: 600;">Stamp:</p>
+                        </div>
+                    </div>
+
+                    <!-- 2. Foreword by Compliance Officer -->
+                    <div class="page-break">
+                        <h2 class="section-title">2. FOREWORD BY THE COMPLIANCE OFFICER</h2>
+
+                        <p style="margin-top: 1.5rem;">I, <span t-esc="env.user.name"/>, the Compliance Officer of <span t-field="company.name"/>, am honored to present this Enterprise-Wide Risk Assessment Report. This document provides a detailed overview of our company's ongoing efforts to identify, evaluate, and mitigate risks across all business operations. It reflects our steadfast commitment to excellence in governance, risk management, and regulatory compliance.</p>
+
+                        <p style="margin-top: 0.75rem;">Our risk assessment framework is designed to proactively detect potential threats and ensure effective controls and mitigation strategies are in place. <span t-field="company.name"/> operates with strict adherence to applicable laws and regulations, including Anti-Money Laundering (AML), Counter Financing of Terrorism (CFT), and other relevant compliance frameworks. Through rigorous due diligence, continuous monitoring, and improvement, we uphold the integrity, transparency, and reliability of our operations.</p>
+
+                        <p style="margin-top: 0.75rem;">This report underscores our unwavering dedication to protecting our stakeholders' interests and maintaining <span t-field="company.name"/>'s reputation as a responsible and compliant organization. By fostering a culture of accountability and compliance throughout the company, we ensure that risk management remains a cornerstone of our corporate governance.</p>
+
+                        <p style="margin-top: 2rem;">Sincerely,</p>
+
+                        <div style="margin-top: 3rem; border-top: 1px solid #94a3b8; padding-top: 1rem; display: inline-block; width: 320px;">
+                            <p><strong><span t-esc="env.user.name"/></strong></p>
+                            <p><strong>Compliance Officer</strong></p>
+                            <p><strong><span t-field="company.name"/></strong></p>
+                        </div>
+                    </div>
+
+                    <!-- 3. Company Overview -->
+                    <div class="page-break">
+                        <h2 class="section-title">3. COMPANY OVERVIEW</h2>
+
+                        <p style="margin-top: 1.5rem;"><span t-field="company.name"/>, headquartered in <span t-field="company.country_id.name"/>, operates in its designated industry and is licensed under <span t-esc="company.company_registry or 'the relevant regulatory authorities'"/>. The company conducts its activities in accordance with applicable regulatory standards, maintaining full compliance with legal and operational requirements.</p>
+
+                        <p style="margin-top: 0.75rem;">Operating primarily in the company's core sector, <span t-field="company.name"/> upholds strong governance principles and transparent business practices. The organization's leadership structure fosters accountability, ethical conduct, and effective decision-making, ensuring the integrity and reliability of its operations.</p>
+
+                        <p style="margin-top: 0.75rem;">With its headquarters located at <span t-esc="', '.join(filter(None, [company.street, company.street2, company.city, company.state_id.name, company.zip]))"/>, and official contact channels via <span t-field="company.email"/> and <span t-field="company.phone"/>, the company serves both local and international clients. It uses <span t-field="company.currency_id.name"/> as its default reporting currency, and adheres to all relevant tax obligations under registration number <span t-esc="company.vat or 'N/A'"/>.</p>
+
+                        <p style="margin-top: 0.75rem;"><span t-field="company.name"/> remains dedicated to sustainable growth, compliance, and operational excellence - continuing to build trust and confidence among its stakeholders through responsible business practices.</p>
+                    </div>
+
+                    <!-- 4. Purpose of Risk Assessment & 5. Frequency -->
+                    <div>
+                        <h2 class="section-title">4. PURPOSE OF RISK ASSESSMENT</h2>
+
+                        <p style="margin-top: 1.5rem;">To mitigate the risks associated with money laundering, terrorism financing, and proliferation financing (ML/TF/PF), a comprehensive risk-based assessment framework has been established. This framework facilitates the periodic and systematic evaluation of ML/TF/PF exposures, enabling the precise identification of risk distribution and the optimization of control mechanisms.</p>
+
+                        <p>The key objectives and purposes of an EWRA:</p>
+
+                        <ul style="margin-left: 2rem; margin-top: 1rem; margin-bottom: 1.5rem;">
+                            <li style="margin: 0.5rem 0;"><strong>Identification of Risks:</strong> The report serves as a tool to identify and document a broad range of risks that could impact the Company.</li>
+                            <li style="margin: 0.5rem 0;"><strong>Prioritization of Risks:</strong> This prioritization helps the Company to focus their resources on managing the most significant and relevant risks.</li>
+                            <li style="margin: 0.5rem 0;"><strong>Compliance and Regulatory Alignment:</strong> Compliance risks are thoroughly assessed and aligned with applicable regulatory requirements.</li>
+                            <li style="margin: 0.5rem 0;"><strong>Strategic Decision Support:</strong> Comprehensive view of potential risks and it will help to the senior management and decision-makers.</li>
+                            <li style="margin: 0.5rem 0;"><strong>Continuous Improvement:</strong> Regular updates to the EWRA allow the Company to adapt their risk management strategies to new challenges, emerging risks, or changes in the operating environment.</li>
+                            <li style="margin: 0.5rem 0;"><strong>Demonstrating Due Diligence:</strong> This EWRA report will serve as evidence of the due diligence in identifying and addressing potential risks. This is particularly important for maintaining trust and credibility.</li>
+                        </ul>
+
+                        <h2 class="section-title">5. FREQUENCY OF RISK ASSESSMENT</h2>
+
+                        <p style="margin-top: 1.5rem;">The Company conducts a comprehensive ML/TF/PF risk assessment at least once annually, or whenever there are changes in business activities or updates to regulatory guidelines. This report presents the findings of the Company's risk assessment conducted for the reporting period of <span t-esc="ewra.period_start.strftime('%d %b %Y')"/> to <span t-esc="ewra.period_end.strftime('%d %b %Y')"/>.</p>
+                    </div>
+
+                    <!-- 6. Risk Assessment Process -->
+                    <div class="page-break">
+                        <h2 class="section-title">6. RISK ASSESSMENT PROCESS</h2>
+
+                        <p style="margin-top: 1.5rem;">The risk assessment process was conducted through the following steps:</p>
+                        <ul style="margin-left: 2rem; margin-top: 1rem;">
+                            <li style="margin: 0.5rem 0;">Identification of Inherent Risks;</li>
+                            <li style="margin: 0.5rem 0;">Evaluation of Risk Control and Mitigation Measures; and</li>
+                            <li style="margin: 0.5rem 0;">Assessment of Residual Risks.</li>
+                        </ul>
+                    </div>
+
+                    <!-- 7. Risk Factors & 8. Risk Visualization -->
+                    <div class="page-break">
+                        <h2 class="section-title">7. RISK FACTORS</h2>
+
+                        <p style="margin-top: 1.5rem;">In adherence to regulatory requirements, the Company conduct a structured methodology to identify and classify its risk factors. These classifications are based on an assessment of both the probability and potential consequence of the risk. The specific risk factors evaluated include:</p>
+
+                        <ul style="margin-left: 2rem; margin-top: 1rem;">
+                            <li style="margin: 0.5rem 0;">Customer Risk</li>
+                            <t t-if="include_supplier">
+                                <li style="margin: 0.5rem 0;">Supplier Risk</li>
+                            </t>
+                            <li style="margin: 0.5rem 0;">Geographical Risk</li>
+                            <li style="margin: 0.5rem 0;">Products / Services Risk</li>
+                            <li style="margin: 0.5rem 0;">Onboarding Channel Risk</li>
+                        </ul>
+
+                        <!-- Risk Visualization Section -->
+                        <h2 class="section-title">8. RISK VISUALIZATION</h2>
+
+                        <p style="margin-top: 1.5rem;">This section presents visual representations of the risk assessment findings to provide a clear and comprehensive overview of the organization's risk profile.</p>
+
+                        <!-- Overall Risk -->
+                        <div style="margin: 1rem 0;">
+                            <h3>Overall Residual Risk</h3>
+                            <div t-attf-style="display: flex; align-items: center; justify-content: flex-start; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.375rem; background-color: {{overall_label == 'High' and '#fee2e2' or (overall_label == 'Medium' and '#fef3c7' or '#dcfce7')}}; margin-top: 0.5rem;">
+                                <span style="font-weight: 700;"><t t-esc="overall_score"/></span>
+                                <span style="text-transform: uppercase; font-weight: 600;"><t t-esc="overall_label"/> RISK</span>
+                            </div>
+                        </div>
+
+                        <!-- Pillar Scores Comparison -->
+                        <div style="margin: 1rem 0;">
+                            <h3>Risk Scores by Category</h3>
+                            <table style="margin-top: 0.5rem; width: 100%; border-collapse: collapse; table-layout: fixed;">
+                                <colgroup>
+                                    <col style="width: 30%;"/>
+                                    <col style="width: 12%;"/>
+                                    <col style="width: 12%;"/>
+                                    <col style="width: 12%;"/>
+                                    <col style="width: 18%;"/>
+                                    <col style="width: 16%;"/>
+                                </colgroup>
+                                <thead>
+                                    <tr style="background-color: #cbd5e1;">
+                                        <th style="padding: 0.4rem; text-align: left; border: 1px solid #64748b; font-size: 9pt;">Risk Category</th>
+                                        <th style="padding: 0.4rem; text-align: center; border: 1px solid #64748b; font-size: 9pt;">Inherent</th>
+                                        <th style="padding: 0.4rem; text-align: center; border: 1px solid #64748b; font-size: 9pt;">Control %</th>
+                                        <th style="padding: 0.4rem; text-align: center; border: 1px solid #64748b; font-size: 9pt;">Residual</th>
+                                        <th style="padding: 0.4rem; text-align: center; border: 1px solid #64748b; font-size: 9pt;">L/M/H %</th>
+                                        <th style="padding: 0.4rem; text-align: center; border: 1px solid #64748b; font-size: 9pt;">Risk Level</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="pillars" t-as="pillar">
+                                        <t t-set="pillar_label" t-value="pillar.pillar == 'customer' and 'Customer' or (pillar.pillar == 'geography' and 'Geography' or (pillar.pillar == 'products' and 'Products/Services' or (pillar.pillar == 'delivery' and 'Onboarding Channel' or 'Supplier')))"/>
+                                        <t t-set="pillar_residual_label" t-value="'High' if pillar.residual_score >= high_threshold else ('Medium' if pillar.residual_score >= medium_threshold else 'Low')"/>
+                                        <tr>
+                                            <td style="padding: 0.4rem; border: 1px solid #64748b; font-weight: 600; font-size: 9pt;"><span t-esc="pillar_label"/></td>
+                                            <td style="padding: 0.4rem; border: 1px solid #64748b; text-align: center; font-size: 9pt;"><span t-esc="'%.2f' % pillar.inherent_score if pillar.inherent_score > 0 else '-'"/></td>
+                                            <td style="padding: 0.4rem; border: 1px solid #64748b; text-align: center; font-size: 9pt;"><span t-esc="'%d' % pillar.control_pct"/>%</td>
+                                            <td style="padding: 0.4rem; border: 1px solid #64748b; text-align: center; font-weight: 700; font-size: 9pt;"><span t-esc="'%.2f' % pillar.residual_score if pillar.residual_score > 0 else '-'"/></td>
+                                            <td style="padding: 0.4rem; border: 1px solid #64748b; text-align: left; font-size: 9pt;">
+                                                <div>L: <span t-esc="'%.1f' % pillar.low_pct"/>%</div>
+                                                <div>M: <span t-esc="'%.1f' % pillar.medium_pct"/>%</div>
+                                                <div>H: <span t-esc="'%.1f' % pillar.high_pct"/>%</div>
+                                            </td>
+                                            <td style="padding: 0.4rem; border: 1px solid #64748b; text-align: center; font-size: 9pt;">
+                                                <span t-if="pillar.residual_score > 0" t-attf-class="badge-{{pillar_residual_label.lower()}}"><span t-esc="pillar_residual_label.upper()"/></span>
+                                                <span t-else="">-</span>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 9. Customer Risk -->
+                    <div class="page-break">
+                        <h2 class="section-title">9. CUSTOMER RISK</h2>
+
+                        <t t-if="customer_pillar">
+                            <p style="margin-top: 0.75rem;">The Company categorizes its customers into two main groups: Natural Persons (Individual Customers) and Legal Entities (Corporate Customers). Both domestic and international clients are engaged in accordance with international Anti-Money Laundering (AML) and Counter Financing of Terrorism (CFT) standards to ensure full regulatory compliance.</p>
+
+                            <div style="margin: 1rem 0;">
+                                <h3>Risk Distribution</h3>
+                                <table style="margin-top: 0.5rem; width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background-color: #cbd5e1;">
+                                            <th style="padding: 0.3rem; text-align: left; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Risk Level</th>
+                                            <th style="padding: 0.3rem; text-align: center; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Percentage</th>
+                                            <th style="padding: 0.3rem; text-align: left; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>Low</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % customer_pillar.low_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Majority of customers fall into this category.</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>Medium</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % customer_pillar.medium_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Customers with some higher-risk attributes.</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>High</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % customer_pillar.high_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Customers requiring enhanced due diligence.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <h3 style="margin-top: 1rem;">Customer Risk Analysis</h3>
+
+                            <p style="margin-top: 0.5rem;"><span t-field="company.name"/> performs thorough due diligence on all customers to effectively identify and manage potential risks. The process includes the following key measures:</p>
+
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li><strong>Customer Identity Verification:</strong> Confirming the authenticity of customers and validating Know Your Customer (KYC) documentation.</li>
+                                <li><strong>Background Screening:</strong> Conducting detailed checks on customer reputation, financial soundness, and legal standing, including adverse media, sanctions, and politically exposed person (PEP) screening.</li>
+                                <li><strong>Geographical Risk Assessment:</strong> Evaluating exposure linked to customers from high-risk or non-compliant jurisdictions.</li>
+                                <li><strong>Customer Profiling and Activity Review:</strong> Classifying customers by business type and nature to ensure consistency with regulatory and industry standards.</li>
+                                <li><strong>Regulatory Compliance Review:</strong> Ensuring all customers comply with AML/CFT obligations and maintain appropriate internal control systems.</li>
+                                <li><strong>Initial Risk Rating:</strong> Assigning preliminary risk levels based on jurisdiction, business category, transaction behavior, and compliance record.</li>
+                                <li><strong>Ongoing Monitoring:</strong> Continuously tracking customer transactions, behavioral changes, and regulatory compliance, followed by periodic risk reassessments.</li>
+                            </ul>
+
+                            <t t-set="customer_residual_label" t-value="'High' if customer_pillar.residual_score >= high_threshold else ('Medium' if customer_pillar.residual_score >= medium_threshold else 'Low')"/>
+                            <p style="margin-top: 1rem;"><strong>Conclusion:</strong> Following the assessment, the Company's overall customer risk rating is determined as <strong><span t-esc="customer_residual_label"/></strong>.</p>
+                        </t>
+                        <t t-else="">
+                            <p>Customer risk data not available.</p>
+                        </t>
+                    </div>
+
+                    <!-- 10. Supplier Risk (conditional) -->
+                    <t t-if="include_supplier">
+                        <div class="page-break">
+                            <h2 class="section-title">10. SUPPLIER RISK</h2>
+
+                            <t t-if="supplier_pillar">
+                                <p style="margin-top: 0.75rem;">The Company engages exclusively with legitimate suppliers, ensuring all suppliers undergo a rigorous enhanced due diligence process conducted in accordance with the due diligence regulations for the responsible sourcing of gold.</p>
+
+                                <div style="margin: 1rem 0;">
+                                    <h3>Risk Distribution</h3>
+                                    <table style="margin-top: 0.5rem; width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="background-color: #cbd5e1;">
+                                                <th style="padding: 0.3rem; text-align: left; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Risk Level</th>
+                                                <th style="padding: 0.3rem; text-align: center; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Percentage</th>
+                                                <th style="padding: 0.3rem; text-align: left; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Note</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>Low</strong></td>
+                                                <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % supplier_pillar.low_pct"/>%</td>
+                                                <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Suppliers from low-risk jurisdictions.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>Medium</strong></td>
+                                                <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % supplier_pillar.medium_pct"/>%</td>
+                                                <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Suppliers with some medium-risk attributes.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>High</strong></td>
+                                                <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % supplier_pillar.high_pct"/>%</td>
+                                                <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Suppliers from high-risk jurisdictions.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <h3 style="margin-top: 1rem;">Supplier Risk Analysis</h3>
+
+                                <p style="margin-top: 0.5rem;">The Company conducts comprehensive due diligence on all suppliers through the following measures:</p>
+
+                                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                    <li><strong>Verification of Supplier Legitimacy:</strong> Assessing legal status and credibility of suppliers, reviewing business registration, licenses, and regulatory compliance.</li>
+                                    <li><strong>Background Checks:</strong> Conducting due diligence on the supplier's history, reputation, and track record, screening for adverse media, legal cases, financial stability, and sanctions.</li>
+                                    <li><strong>Geographical Considerations:</strong> Evaluating risks associated with suppliers from high-risk jurisdictions and assessing the regulatory strength of the supplier's country of operation.</li>
+                                    <li><strong>Compliance with Industry Standards:</strong> Reviewing adherence to responsible sourcing, ethical mining, and environmental sustainability practices, and verifying certifications and industry best practices compliance.</li>
+                                    <li><strong>Initial Risk Evaluation:</strong> Assigning a risk rating to each supplier based on location, reputation, and compliance history, and identifying high-risk suppliers who require enhanced scrutiny.</li>
+                                    <li><strong>Ongoing Monitoring and Review:</strong> Identifying any changes in supplier risk profile through continuous evaluation, reviewing red flags, transaction patterns, and regulatory developments.</li>
+                                </ul>
+
+                                <t t-set="supplier_residual_label" t-value="'High' if supplier_pillar.residual_score >= high_threshold else ('Medium' if supplier_pillar.residual_score >= medium_threshold else 'Low')"/>
+                                <p style="margin-top: 1rem;"><strong>Based on the analysis and software assessment, the overall supplier risk is rated as <strong><span t-esc="supplier_residual_label"/></strong> risk.</strong></p>
+                            </t>
+                        </div>
+                    </t>
+
+                    <!-- 11. Geographical Risk -->
+                    <div class="page-break">
+                        <h2 class="section-title"><t t-if="include_supplier">11</t><t t-else="">10</t>. GEOGRAPHICAL RISK</h2>
+
+                        <t t-if="geography_pillar">
+                            <p style="margin-top: 0.75rem;"><span t-field="company.name"/> conducts a structured assessment of geographical risk using the Nex Systems software, which incorporates the Know Your Country Index to evaluate exposure to Geographic, Jurisdictional, and Country-level risks. This assessment framework enables the Company to identify countries or regions that may pose elevated risks due to weak governance, insufficient regulatory standards, or geopolitical instability.</p>
+
+                            <p style="margin-top: 0.75rem;">During the analysis, the following factors are closely examined:</p>
+
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li><strong>Support for Terrorist Activities:</strong> Countries identified by credible international sources as supporting or harboring terrorist activities are classified as high-risk.</li>
+                                <li><strong>Non-Compliant Money Laundering Laws:</strong> Jurisdictions flagged by the Financial Action Task Force (FATF) or equivalent authorities for inadequate AML legislation or enforcement are treated as high-risk.</li>
+                                <li><strong>Weak Terrorist Financing Regulations:</strong> Countries with poor or ineffective laws against terrorist financing are subjected to enhanced scrutiny.</li>
+                                <li><strong>Corruption and Tax Transparency:</strong> Nations recognized for systemic corruption or lack of tax transparency are evaluated as high-risk due to governance and accountability concerns.</li>
+                                <li><strong>International Sanctions:</strong> Countries or territories subject to Targeted Financial Sanctions (TFS), UN, or other recognized sanctions are automatically included in the high-risk category.</li>
+                            </ul>
+
+                            <div style="margin: 1rem 0;">
+                                <h3>Risk Distribution</h3>
+                                <table style="margin-top: 0.5rem; width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background-color: #cbd5e1;">
+                                            <th style="padding: 0.3rem; text-align: left; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Risk Level</th>
+                                            <th style="padding: 0.3rem; text-align: center; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Percentage</th>
+                                            <th style="padding: 0.3rem; text-align: left; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>Low</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % geography_pillar.low_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Transactions with low-risk countries.</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>Medium</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % geography_pillar.medium_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Transactions with medium-risk countries.</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>High</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % geography_pillar.high_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Transactions with high-risk countries.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p style="margin-top: 0.75rem;">Through this comprehensive evaluation, the Company ensures robust management of geographical exposure, allowing for proactive mitigation of potential threats and consistent compliance with global AML/CFT standards.</p>
+
+                            <t t-set="geography_residual_label" t-value="'High' if geography_pillar.residual_score >= high_threshold else ('Medium' if geography_pillar.residual_score >= medium_threshold else 'Low')"/>
+                            <p style="margin-top: 1rem;"><strong>Conclusion:</strong> Based on the analysis, the Company's overall geographical risk is assessed as <strong><span t-esc="geography_residual_label"/></strong>, reflecting strong oversight and effective jurisdictional risk controls.</p>
+                        </t>
+                        <t t-else="">
+                            <p>Geographical risk data not available.</p>
+                        </t>
+                    </div>
+
+                    <!-- 12. Product Risk & 13. Transaction Mode Risk -->
+                    <div class="page-break">
+                        <h2 class="section-title"><t t-if="include_supplier">12</t><t t-else="">11</t>. PRODUCT RISK</h2>
+
+                        <t t-if="products_pillar">
+                            <p style="margin-top: 0.75rem;"><span t-field="company.name"/> recognizes that products offered within the DNFBP sector inherently carry exposure to money laundering risks due to their <strong>high value</strong> and <strong>ease of liquidity</strong>. However, robust internal controls, strict verification processes, and continuous compliance monitoring ensure that these risks remain effectively mitigated.</p>
+
+                            <div style="margin: 1rem 0;">
+                                <h3>Risk Distribution</h3>
+                                <table style="margin-top: 0.5rem; width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background-color: #cbd5e1;">
+                                            <th style="padding: 0.3rem; text-align: left; border: 1px solid #64748b; font-size: 8pt; font-weight: 600; width: 20%;">Risk Level</th>
+                                            <th style="padding: 0.3rem; text-align: center; border: 1px solid #64748b; font-size: 8pt; font-weight: 600; width: 20%;">Percentage</th>
+                                            <th style="padding: 0.3rem; text-align: left; border: 1px solid #64748b; font-size: 8pt; font-weight: 600; width: 60%;">Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>Low</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % products_pillar.low_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Minimal risk exposure due to strong internal controls and monitoring.</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>Medium</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % products_pillar.medium_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">No medium-risk products identified in the current assessment.</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>High</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % products_pillar.high_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">No products classified as high-risk for money laundering activities.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <h3 style="margin-top: 1rem;">Analysis</h3>
+
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li><strong>Product Risk Classification:</strong> Products are evaluated as potentially high-risk due to their inherent value and liquidity, which can make them appealing for money laundering. However, enhanced due diligence and transaction monitoring significantly reduce exposure.</li>
+                                <li><strong>High Value and Liquidity Risks:</strong> Products with a high value-to-weight ratio enable faster liquidation and easier concealment of funds. The Company's control mechanisms and regulatory alignment mitigate these vulnerabilities effectively.</li>
+                            </ul>
+
+                            <t t-set="products_residual_label" t-value="'High' if products_pillar.residual_score >= high_threshold else ('Medium' if products_pillar.residual_score >= medium_threshold else 'Low')"/>
+                            <p style="margin-top: 1rem;"><strong>Conclusion:</strong> According to the National Risk Assessment (NRA), the Company's <strong>product risk is assessed as <strong><span t-esc="products_residual_label"/></strong></strong>.</p>
+                        </t>
+                        <t t-else="">
+                            <p>Product risk data not available.</p>
+                        </t>
+
+                        <h2 class="section-title"><t t-if="include_supplier">13</t><t t-else="">12</t>. TRANSACTION &amp; PAYMENT MODE RISK</h2>
+
+                        <t t-if="products_pillar">
+                            <p style="margin-top: 0.75rem;"><span t-field="company.name"/> enforces a transparent and traceable payment system to minimize money laundering risk. All transactions are processed exclusively through regulated banking channels, with cash transactions strictly prohibited.</p>
+
+                            <div class="page-break"></div>
+
+                            <h3 style="margin-top: 1rem;">Analysis</h3>
+                            <p style="margin-top: 0.5rem;">By avoiding cash dealings and maintaining a fully traceable electronic payment system, <span t-field="company.name"/> ensures compliance with AML/CFT obligations and significantly lowers exposure to financial crime risks.</p>
+
+                            <p style="margin-top: 1rem;"><strong>Conclusion:</strong> Based on the current assessment, the Company's <strong>transaction and payment mode risk is rated as <strong><span t-esc="products_residual_label"/></strong></strong>.</p>
+                        </t>
+                        <t t-else="">
+                            <p>Transaction and payment mode risk data not available.</p>
+                        </t>
+
+                        <!-- 14. Onboarding Channel Risk -->
+                        <h2 class="section-title"><t t-if="include_supplier">14</t><t t-else="">13</t>. ONBOARDING CHANNEL RISK</h2>
+
+                        <t t-if="delivery_pillar">
+                            <p style="margin-top: 0.75rem;">The Company performs customer onboarding in face to face and handles gold deliveries through authorized cargo services.</p>
+
+                            <div style="margin: 1rem 0;">
+                                <h3>Risk Distribution</h3>
+                                <table style="margin-top: 0.5rem; width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background-color: #cbd5e1;">
+                                            <th style="padding: 0.3rem; text-align: left; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Risk Level</th>
+                                            <th style="padding: 0.3rem; text-align: center; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Percentage</th>
+                                            <th style="padding: 0.3rem; text-align: left; border: 1px solid #64748b; font-size: 8pt; font-weight: 600;">Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>Low</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % delivery_pillar.low_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Face-to-face onboarding.</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>Medium</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % delivery_pillar.medium_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">Authorized cargo transactions.</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;"><strong>High</strong></td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; text-align: center; font-size: 8pt;"><span t-esc="'%.1f' % delivery_pillar.high_pct"/>%</td>
+                                            <td style="padding: 0.3rem; border: 1px solid #64748b; font-size: 8pt;">-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <h3 style="margin-top: 1rem;">Analysis</h3>
+
+                            <p style="margin-top: 0.5rem;">The overall risk level is assessed by considering the combined impact of operational, compliance, security, and logistical risks from both onboarding and cargo transactions: <strong>(a) Face-to-Face Onboarding: Low</strong> and <strong>(b) Authorized Cargo Transactions: Medium</strong>. Although customer onboarding is conducted face-to-face as a one-time event, all subsequent transactions are carried out through authorized cargo services. Given the nature of the transactions, particularly the involvement of physical gold and the reliance on third-party logistics, this process is rated <strong>medium risk</strong>.</p>
+
+                            <t t-set="delivery_residual_label" t-value="'High' if delivery_pillar.residual_score >= high_threshold else ('Medium' if delivery_pillar.residual_score >= medium_threshold else 'Low')"/>
+                            <p style="margin-top: 1rem;"><strong>Based on the analysis, the Company's delivery channel risk rated as <strong><span t-esc="delivery_residual_label"/></strong> risk.</strong></p>
+                        </t>
+                        <t t-else="">
+                            <p>Delivery channel risk data not available.</p>
+                        </t>
+                    </div>
+
+                    <!-- 15. Inherent Risk Assessment Result -->
+                    <div class="page-break">
+                        <h2 class="section-title"><t t-if="include_supplier">15</t><t t-else="">14</t>. INHERENT RISK ASSESSMENT RESULT</h2>
+
+                        <table style="margin-top: 2rem; table-layout: fixed;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60%; background-color: #cbd5e1; border: 1px solid #64748b;">Risk Type</th>
+                                    <th style="width: 40%; text-align: center; background-color: #cbd5e1; border: 1px solid #64748b;">Risk Level</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="pillars" t-as="pillar">
+                                    <t t-set="pillar_label" t-value="pillar.pillar == 'customer' and 'Customer Risk' or (pillar.pillar == 'geography' and 'Geographical Risk' or (pillar.pillar == 'products' and 'Products / Services Risk' or (pillar.pillar == 'delivery' and 'Delivery Channel Risk' or 'Supplier Risk')))"/>
+                                    <t t-set="pillar_residual_label" t-value="'High' if pillar.residual_score >= high_threshold else ('Medium' if pillar.residual_score >= medium_threshold else 'Low')"/>
+                                    <t t-set="pillar_bg_color" t-value="pillar_residual_label == 'High' and '#fee2e2' or (pillar_residual_label == 'Medium' and '#fef3c7' or '#dcfce7')"/>
+                                    <tr>
+                                        <td style="font-weight: 600; border: 1px solid #64748b;"><span t-esc="pillar_label"/></td>
+                                        <td t-attf-style="text-align: center; background-color: {{pillar_bg_color}}; font-weight: 700; text-transform: uppercase; border: 1px solid #64748b;"><span t-esc="pillar_residual_label"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <h2 class="section-title"><t t-if="include_supplier">16</t><t t-else="">15</t>. INTERNAL CONTROLS</h2>
+
+                        <h3 style="margin-top: 2rem;">(a) Customer and Supplier Onboarding Controls</h3>
+
+                        <p style="margin-top: 1rem;">The Company implemented due diligence and Enhanced Due Diligence (EDD) measures to verify customer and supplier identity, assess risk levels, and prevent financial crimes. These measures include:</p>
+
+                        <p style="margin-top: 1rem;"><strong>Identity Verification:</strong></p>
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li style="margin: 0.5rem 0;">Trade License, Certificate of Incorporation, and MOA/AOA.</li>
+                            <li style="margin: 0.5rem 0;">For Ultimate Beneficial Owners (UBOs), shareholders, and authorized signatories' passports, visas, and Emirates IDs.</li>
+                            <li style="margin: 0.5rem 0;">Proof of address to confirm a legitimate business location.</li>
+                            <li style="margin: 0.5rem 0;">VAT Certificate to confirm tax compliance.</li>
+                            <li style="margin: 0.5rem 0;">Undertaking and PEP Declaration to assess corruption risks.</li>
+                            <li style="margin: 0.5rem 0;">Completed KYC Form for comprehensive customer profiling.</li>
+                        </ul>
+
+                        <h3 style="margin-top: 2rem;">(b) Sanctions &amp; Terrorist Financing Controls</h3>
+
+                        <p style="margin-top: 1rem;"><strong>Screening Process:</strong></p>
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li style="margin: 0.5rem 0;">Customers and suppliers are screened against global and UAE-specific sanction lists, including the UNSC, UAE Local Terrorist Lists, and other relevant lists.</li>
+                            <li style="margin: 0.5rem 0;">PEP screening is conducted using the company's Nex Systems software to identify individuals with political exposure.</li>
+                            <li style="margin: 0.5rem 0;">Continuous monitoring ensures sanctions lists are regularly updated.</li>
+                        </ul>
+
+                        <h3 style="margin-top: 2rem;">(c) Transaction Controls</h3>
+
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li style="margin: 0.5rem 0;">Only the approved profiles (customer and supplier) are eligible to execute the transactions.</li>
+                            <li style="margin: 0.5rem 0;">EDD is conducted for all high-value transactions.</li>
+                            <li style="margin: 0.5rem 0;">A system is in place to detect unusual or suspicious activities during transactions.</li>
+                        </ul>
+
+                        <h3 style="margin-top: 2rem;">(d) Ongoing Monitoring Controls</h3>
+
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li style="margin: 0.5rem 0;">The Company's screening software continuously monitors customer and supplier profiles. If there are any changes in risk status or matches with sanction or PEP categories, the system alerts the compliance officer.</li>
+                            <li style="margin: 0.5rem 0;">In-depth verification and assessment for high-risk suppliers and customers, including those from high-risk jurisdictions.</li>
+                            <li style="margin: 0.5rem 0;">Automated transaction monitoring tools detect unusual patterns, and escalation procedures are followed for high-risk profiles.</li>
+                            <li style="margin: 0.5rem 0;">Regular updates and reviews of country risk classifications.</li>
+                            <li style="margin: 0.5rem 0;">Adjustments to risk levels based on FATF and Know Your Country assessments.</li>
+                            <li style="margin: 0.5rem 0;">If a customer's risk profile changes, a review is conducted, and high-risk customers undergo periodic re-screening.</li>
+                            <li style="margin: 0.5rem 0;">Pattern analysis is conducted to detect unusual transaction behavior.</li>
+                        </ul>
+
+                        <h3 style="margin-top: 2rem;">(e) Authorized Cargo Service Provider Controls</h3>
+
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li style="margin: 0.5rem 0;">The Company exclusively engages with verified and regulated cargo service providers to handle deliveries, ensuring secure and compliant movement of goods.</li>
+                            <li style="margin: 0.5rem 0;">The delivery process is fully documented, and records are maintained for each transaction to ensure transparency and compliance.</li>
+                            <li style="margin: 0.5rem 0;">No alternative delivery channels are permitted, reducing the risk of unauthorized transactions or illicit activities.</li>
+                        </ul>
+
+                        <h3 style="margin-top: 2rem;">(f) DPMS Reporting Controls</h3>
+
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li style="margin: 0.5rem 0;">Qualified transactions are reported on the GoAML portal as Dealers in Precious Metals and Stones Reports (DPMSR) within 14 days of the transaction execution date.</li>
+                        </ul>
+
+                        <h3 style="margin-top: 2rem;">(g) Reporting Mechanism Controls</h3>
+
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li style="margin: 0.5rem 0;">Confirmed or partial matches during screening are reported to the UAE Financial Intelligence Unit (UAE-FIU) via the goAML system.</li>
+                            <li style="margin: 0.5rem 0;">Suspicious transactions or suspicious activities are filed as Suspicious Transaction Reports (STRs) or Suspicious Activity Reports (SARs).</li>
+                        </ul>
+
+                        <h3 style="margin-top: 2rem;">(h) Restrictions Controls</h3>
+
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li style="margin: 0.5rem 0;">Customers or suppliers cannot be onboarded without completing KYC and CDD procedures.</li>
+                            <li style="margin: 0.5rem 0;">Transactions (buy/sell) cannot be initiated unless the required documents are provided by the customer or supplier.</li>
+                            <li style="margin: 0.5rem 0;">Remote or third-party onboarding is not permitted.</li>
+                        </ul>
+
+                        <h3 style="margin-top: 2rem;">(i) SYSTEM BASED CONTROLS</h3>
+
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li style="margin: 0.5rem 0;">Also, the Company applies systematic risk mitigation process, the Compliance Officer can set the risk mitigation controls as per the requirements.</li>
+                            <li style="margin: 0.5rem 0;">The assessment / risk mitigation will finalize the overall risk about the customer and the supplier based on the residual risk level the Compliance officer will set the ongoing monitoring for the high-risk profiles.</li>
+                        </ul>
+
+                        <h2 class="section-title"><t t-if="include_supplier">17</t><t t-else="">16</t>. SETTINGS SNAPSHOT (APPENDIX)</h2>
+                        <p style="margin-top: 1rem;">This appendix captures the thresholds and control rules used for this EWRA run.</p>
+                        <table style="margin-top: 1rem; table-layout: fixed; width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #cbd5e1;">
+                                    <th style="border: 1px solid #64748b; padding: 0.3rem;">Parameter</th>
+                                    <th style="border: 1px solid #64748b; padding: 0.3rem;">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td style="border: 1px solid #64748b; padding: 0.3rem;">Low Band</td><td style="border: 1px solid #64748b; padding: 0.3rem;">1.0 - 1.6</td></tr>
+                                <tr><td style="border: 1px solid #64748b; padding: 0.3rem;">Medium Band</td><td style="border: 1px solid #64748b; padding: 0.3rem;">1.7 - 2.3</td></tr>
+                                <tr><td style="border: 1px solid #64748b; padding: 0.3rem;">High Band</td><td style="border: 1px solid #64748b; padding: 0.3rem;">2.4 - 3.0</td></tr>
+                                <tr><td style="border: 1px solid #64748b; padding: 0.3rem;">Controls Cap</td><td style="border: 1px solid #64748b; padding: 0.3rem;"><span t-esc="settings.cap_pct if settings else 70"/>%</td></tr>
+                                <tr><td style="border: 1px solid #64748b; padding: 0.3rem;">Downgrade Threshold</td><td style="border: 1px solid #64748b; padding: 0.3rem;"><span t-esc="settings.downgrade_threshold if settings else 35"/>%</td></tr>
+                                <tr><td style="border: 1px solid #64748b; padding: 0.3rem;">Max Downgrade</td><td style="border: 1px solid #64748b; padding: 0.3rem;">1 level</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h2 class="section-title" style="margin-top: 1.5rem;"><t t-if="include_supplier">18</t><t t-else="">17</t>. CONCLUSION</h2>
+
+                        <p style="margin-top: 1.5rem;">According to the National Anti-Money Laundering and Combating the Financing of Terrorism and Financing of Illegal Organizations Committee (NAMLCFTC), their National Risk Assessment (NRA), and the Sectoral Risk Assessment (SRA), the DPMS sector is classified as high risk. During the reporting period, based on our comprehensive evaluation of risk factors such as Customer Risk, Supplier Risk, Geographical Risk, Products/Services Risk, and Delivery Channel Risk, along with the implemented risk mitigation and internal control processes, the company has categorized its overall risk as <strong><span t-esc="overall_label"/></strong>.</p>
+
+                        <t t-if="ewra.narrative_id and ewra.narrative_id.conclusion">
+                            <p style="margin-top: 1.5rem;"><span t-field="ewra.narrative_id.conclusion"/></p>
+                        </t>
+
+                        <div style="margin-top: 4rem;">
+                            <p>Sincerely,</p>
+
+                            <div style="margin-top: 4rem; border-top: 1px solid #e2e8f0; padding-top: 1rem; display: inline-block; width: 300px;">
+                                <p><strong>Name:</strong></p>
+                                <p><strong>Compliance Officer</strong></p>
+                            </div>
+                        </div>
+                    </div>
+
+                </body>
+            </t>
+        </t>
+    </template>
+
+</odoo>

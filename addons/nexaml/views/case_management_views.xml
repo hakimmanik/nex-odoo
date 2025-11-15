@@ -5,13 +5,13 @@
         <field name="name">aml.case.decision.tree</field>
         <field name="model">aml.case.decision</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="decided_date"/>
                 <field name="decision_type" widget="badge"/>
                 <field name="outcome" optional="show"/>
                 <field name="decided_by"/>
                 <field name="rationale" optional="hide"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -47,7 +47,7 @@
         <field name="name">aml.case.timeline.tree</field>
         <field name="model">aml.case.timeline</field>
         <field name="arch" type="xml">
-            <tree create="0" delete="0" default_order="event_date desc">
+            <list create="0" delete="0" default_order="event_date desc">
                 <field name="event_date"/>
                 <field name="event_type" widget="badge"
                        decoration-info="event_type == 'status_changed'"
@@ -55,7 +55,7 @@
                        decoration-success="event_type == 'decision_made'"/>
                 <field name="description"/>
                 <field name="user_id"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -89,13 +89,13 @@
         <field name="name">aml.case.note.tree</field>
         <field name="model">aml.case.note</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="created_date"/>
                 <field name="note_type" widget="badge"/>
                 <field name="title"/>
                 <field name="author_id"/>
                 <field name="is_confidential" optional="show" widget="boolean_toggle"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -130,7 +130,7 @@
         <field name="name">aml.case.task.tree</field>
         <field name="model">aml.case.task</field>
         <field name="arch" type="xml">
-            <tree decoration-muted="state == 'completed'" decoration-danger="due_date and due_date &lt; current_date and state != 'completed'">
+            <list decoration-muted="state == 'completed'" decoration-danger="due_date and due_date &lt; current_date and state != 'completed'">
                 <field name="name"/>
                 <field name="task_type" optional="show"/>
                 <field name="state" widget="badge"
@@ -143,7 +143,7 @@
                 <field name="due_date"/>
                 <button name="action_mark_done" type="object" string="Mark Done" icon="fa-check-circle" invisible="state == 'completed'"/>
                 <button name="action_mark_in_progress" type="object" string="Start" icon="fa-play" invisible="state != 'pending'"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -190,7 +190,7 @@
                 <field name="assigned_to"/>
                 <field name="due_date"/>
                 <templates>
-                    <t t-name="kanban-box">
+                    <t t-name="card">
                         <div class="oe_kanban_card oe_kanban_global_click">
                             <div class="oe_kanban_content">
                                 <div class="o_kanban_record_top">
@@ -224,28 +224,28 @@
     <record id="action_case_decision" model="ir.actions.act_window">
         <field name="name">Case Decisions</field>
         <field name="res_model">aml.case.decision</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="context">{'search_default_case_id': active_id}</field>
     </record>
 
     <record id="action_case_timeline" model="ir.actions.act_window">
         <field name="name">Case Timeline</field>
         <field name="res_model">aml.case.timeline</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="context">{'search_default_case_id': active_id}</field>
     </record>
 
     <record id="action_case_note" model="ir.actions.act_window">
         <field name="name">Case Notes</field>
         <field name="res_model">aml.case.note</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="context">{'search_default_case_id': active_id, 'default_case_id': active_id}</field>
     </record>
 
     <record id="action_case_task" model="ir.actions.act_window">
         <field name="name">Case Tasks</field>
         <field name="res_model">aml.case.task</field>
-        <field name="view_mode">tree,kanban,form</field>
+        <field name="view_mode">list,kanban,form</field>
         <field name="context">{'search_default_case_id': active_id, 'default_case_id': active_id}</field>
     </record>
 </odoo>

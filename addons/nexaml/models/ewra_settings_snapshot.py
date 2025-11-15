@@ -82,17 +82,19 @@ class EwraSettingsSnapshot(models.Model):
 
     @api.model
     def create_from_current_settings(self, run_id):
-        """Create snapshot from current system settings."""
-        IrConfigParam = self.env['ir.config_parameter'].sudo()
+        """Create snapshot from current global EWRA settings."""
+        # Get global EWRA settings for the company
+        run = self.env['nexaml.ewra.run'].browse(run_id)
+        settings = self.env['nexaml.ewra.settings'].get_settings(run.company_id.id)
 
         return self.create({
             'run_id': run_id,
-            'risk_threshold_medium': 1.7,  # Could be configurable
-            'risk_threshold_high': 2.4,
-            'downgrade_threshold': 35,
-            'cap_pct': 70,
-            'default_control_band': 'adequate',
-            'edd_threshold': IrConfigParam.get_param('nexaml.edd_threshold', 'medium'),
-            'screening_threshold': float(IrConfigParam.get_param('nexaml.screening_threshold', '70.0')),
-            'auto_screen_on_create': IrConfigParam.get_param('nexaml.auto_screen_on_create', 'False') == 'True',
+            'risk_threshold_medium': settings.risk_threshold_medium,
+            'risk_threshold_high': settings.risk_threshold_high,
+            'downgrade_threshold': settings.downgrade_threshold,
+            'cap_pct': settings.cap_pct,
+            'default_control_band': settings.default_control_band,
+            'edd_threshold': settings.edd_threshold,
+            'screening_threshold': settings.sanctions_match_threshold,
+            'auto_screen_on_create': settings.auto_screen_on_create,
         })

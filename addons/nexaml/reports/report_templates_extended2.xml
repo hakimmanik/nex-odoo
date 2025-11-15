@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- AIF Report Template -->
+    <template id="report_aif_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard">
+                <t t-foreach="wizard.partner_ids" t-as="partner">
+                    <t t-call="web.external_layout">
+                        <div class="page">
+                            <h2 class="text-center">Account Information Form (AIF)</h2>
+
+                            <div class="row mt-3">
+                                <div class="col-6">
+                                    <strong>Report Date:</strong> <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Customer ID:</strong> <span t-esc="partner.id"/>
+                                </div>
+                            </div>
+
+                            <h4 class="mt-4">Customer Information</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 30%">Customer Name</th>
+                                    <td><span t-field="partner.name"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Customer Type</th>
+                                    <td><span t-esc="'Company' if partner.is_company else 'Individual'"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Country</th>
+                                    <td><span t-field="partner.country_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Tax ID / VAT</th>
+                                    <td><span t-field="partner.vat"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Email</th>
+                                    <td><span t-field="partner.email"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Phone</th>
+                                    <td><span t-field="partner.phone"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Address</th>
+                                    <td>
+                                        <span t-field="partner.street"/><br/>
+                                        <span t-field="partner.city"/>, <span t-field="partner.state_id.name"/> <span t-field="partner.zip"/>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <h4 class="mt-4">Risk Assessment</h4>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 30%">Risk Level</th>
+                                    <td>
+                                        <span t-attf-class="badge badge-{{partner.risk_level == 'high' and 'danger' or partner.risk_level == 'medium' and 'warning' or 'success'}}">
+                                            <span t-esc="partner.risk_level.upper() if partner.risk_level else 'N/A'"/>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Inherent Risk</th>
+                                    <td><span t-esc="'%.2f' % partner.inherent_risk"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Residual Risk</th>
+                                    <td><span t-esc="'%.2f' % partner.residual_risk"/></td>
+                                </tr>
+                                <tr>
+                                    <th>PEP Status</th>
+                                    <td><span t-if="partner.pep_status" class="badge badge-warning">PEP</span><span t-else="">No</span></td>
+                                </tr>
+                                <tr>
+                                    <th>Sanctions Status</th>
+                                    <td>
+                                        <span t-attf-class="badge badge-{{partner.sanctions_status == 'match' and 'danger' or partner.sanctions_status == 'clear' and 'success' or 'secondary'}}">
+                                            <span t-esc="partner.sanctions_status.upper() if partner.sanctions_status else 'NOT SCREENED'"/>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>EDD Required</th>
+                                    <td><span t-esc="'Yes' if partner.edd_required else 'No'"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Last Assessment Date</th>
+                                    <td><span t-field="partner.last_assessment_date"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Next Review Date</th>
+                                    <td><span t-field="partner.next_review_date"/></td>
+                                </tr>
+                            </table>
+
+                            <t t-if="partner.is_company and partner.child_ids">
+                                <h4 class="mt-4">Related Parties</h4>
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Party Type</th>
+                                            <th>Ownership %</th>
+                                            <th>PEP Status</th>
+                                            <th>Sanctions Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="partner.child_ids" t-as="related">
+                                            <tr>
+                                                <td><span t-field="related.name"/></td>
+                                                <td><span t-field="related.party_type"/></td>
+                                                <td><span t-field="related.ownership_percentage"/></td>
+                                                <td><span t-if="related.pep_status" class="badge badge-warning">PEP</span><span t-else="">No</span></td>
+                                                <td>
+                                                    <span t-attf-class="badge badge-{{related.sanctions_status == 'match' and 'danger' or related.sanctions_status == 'clear' and 'success' or 'secondary'}}">
+                                                        <span t-esc="related.sanctions_status.upper() if related.sanctions_status else 'N/A'"/>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </t>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- AIFT Report Template -->
+    <template id="report_aift_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">Account Information Form - Threshold (AIFT)</h2>
+
+                        <div class="row mt-3">
+                            <div class="col-4">
+                                <strong>Report Date:</strong> <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                            </div>
+                            <div class="col-4">
+                                <strong>Period:</strong> <span t-esc="wizard.date_from"/> to <span t-esc="wizard.date_to"/>
+                            </div>
+                            <div class="col-4">
+                                <strong>Threshold:</strong> <span t-esc="wizard.threshold_amount" t-options="{'widget': 'monetary'}"/>
+                            </div>
+                        </div>
+
+                        <t t-set="partners" t-value="wizard.partner_ids"/>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <strong>Total Records:</strong> <span t-esc="len(partners)"/>
+                                <p class="text-muted">Customers with transactions exceeding threshold amount</p>
+                            </div>
+                        </div>
+
+                        <h4 class="mt-4">Customer Account Information</h4>
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Type</th>
+                                    <th>Country</th>
+                                    <th>Risk Level</th>
+                                    <th>Tax ID</th>
+                                    <th>Contact</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="partners" t-as="partner">
+                                    <tr>
+                                        <td><span t-field="partner.name"/></td>
+                                        <td><span t-esc="'Company' if partner.is_company else 'Individual'"/></td>
+                                        <td><span t-field="partner.country_id.name"/></td>
+                                        <td>
+                                            <span t-attf-class="badge badge-{{partner.risk_level == 'high' and 'danger' or partner.risk_level == 'medium' and 'warning' or 'success'}}">
+                                                <span t-esc="partner.risk_level.upper() if partner.risk_level else 'N/A'"/>
+                                            </span>
+                                        </td>
+                                        <td><span t-field="partner.vat"/></td>
+                                        <td>
+                                            <span t-field="partner.email"/><br/>
+                                            <span t-field="partner.phone"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ECDD Report Template -->
+    <template id="report_ecdd_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">Enhanced Customer Due Diligence Report (ECDD)</h2>
+
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <strong>Report Date:</strong> <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                            </div>
+                            <div class="col-6">
+                                <strong>Period:</strong> <span t-esc="wizard.date_from"/> to <span t-esc="wizard.date_to"/>
+                            </div>
+                        </div>
+
+                        <t t-set="partners" t-value="wizard.partner_ids if wizard.query_type == 'single' else env['res.partner'].search(wizard._build_advanced_filter_domain() + [('edd_required', '=', True)])"/>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <strong>Total Customers Requiring EDD:</strong> <span t-esc="len(partners)"/>
+                            </div>
+                        </div>
+
+                        <h4 class="mt-4">Enhanced Due Diligence Customers</h4>
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Type</th>
+                                    <th>Risk Level</th>
+                                    <th>PEP Status</th>
+                                    <th>Sanctions</th>
+                                    <th>Customer Risk</th>
+                                    <th>Geography Risk</th>
+                                    <th>Last Assessment</th>
+                                    <th>Next Review</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="partners" t-as="partner">
+                                    <tr>
+                                        <td><strong><span t-field="partner.name"/></strong></td>
+                                        <td><span t-esc="'Company' if partner.is_company else 'Individual'"/></td>
+                                        <td>
+                                            <span t-attf-class="badge badge-{{partner.risk_level == 'high' and 'danger' or partner.risk_level == 'medium' and 'warning' or 'success'}}">
+                                                <span t-esc="partner.risk_level.upper() if partner.risk_level else 'N/A'"/>
+                                            </span>
+                                        </td>
+                                        <td><span t-if="partner.pep_status" class="badge badge-warning">PEP</span><span t-else="">No</span></td>
+                                        <td>
+                                            <span t-attf-class="badge badge-{{partner.sanctions_status == 'match' and 'danger' or partner.sanctions_status == 'clear' and 'success' or 'secondary'}}">
+                                                <span t-esc="partner.sanctions_status.upper() if partner.sanctions_status else 'N/A'"/>
+                                            </span>
+                                        </td>
+                                        <td><span t-esc="'%.2f' % partner.customer_risk"/></td>
+                                        <td><span t-esc="'%.2f' % partner.geography_risk"/></td>
+                                        <td><span t-field="partner.last_assessment_date"/></td>
+                                        <td><span t-field="partner.next_review_date"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <h4 class="mt-4">EDD Requirements Summary</h4>
+                        <div class="alert alert-info">
+                            <p><strong>Enhanced Due Diligence measures required for these customers include:</strong></p>
+                            <ul>
+                                <li>Additional identification and verification of customer identity</li>
+                                <li>Enhanced ongoing monitoring of business relationship</li>
+                                <li>Source of funds and wealth verification</li>
+                                <li>Senior management approval for establishing business relationship</li>
+                                <li>More frequent periodic reviews (recommended: quarterly or bi-annually)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- BASIC Report Template -->
+    <template id="report_basic_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">Basic Customer Report</h2>
+
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <strong>Report Date:</strong> <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                            </div>
+                            <div class="col-6">
+                                <strong>Period:</strong> <span t-esc="wizard.date_from"/> to <span t-esc="wizard.date_to"/>
+                            </div>
+                        </div>
+
+                        <t t-set="partners" t-value="wizard.partner_ids if wizard.query_type == 'single' else env['res.partner'].search(wizard._build_advanced_filter_domain())"/>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <strong>Total Records:</strong> <span t-esc="len(partners)"/>
+                            </div>
+                        </div>
+
+                        <h4 class="mt-4">Customer Listing</h4>
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Type</th>
+                                    <th>Country</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Risk Level</th>
+                                    <th>Created Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="partners" t-as="partner">
+                                    <tr>
+                                        <td><span t-field="partner.name"/></td>
+                                        <td><span t-esc="'Company' if partner.is_company else 'Individual'"/></td>
+                                        <td><span t-field="partner.country_id.name"/></td>
+                                        <td><span t-field="partner.email"/></td>
+                                        <td><span t-field="partner.phone"/></td>
+                                        <td>
+                                            <span t-attf-class="badge badge-{{partner.risk_level == 'high' and 'danger' or partner.risk_level == 'medium' and 'warning' or 'success'}}">
+                                                <span t-esc="partner.risk_level.upper() if partner.risk_level else 'N/A'"/>
+                                            </span>
+                                        </td>
+                                        <td><span t-field="partner.create_date" t-options="{'widget': 'date'}"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

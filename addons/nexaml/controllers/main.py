@@ -15,34 +15,6 @@ class NexAMLController(http.Controller):
         menu = request.env.ref('nexaml.menu_dashboard')
         return request.redirect(f'/web#action={action.id}&menu_id={menu.id}')
 
-    @route('/aml/cases', type='http', auth='user')
-    def cases(self, **kw):
-        """Cases list view."""
-        action = request.env.ref('nexaml.action_case')
-        menu = request.env.ref('nexaml.menu_cases')
-        return request.redirect(f'/web#action={action.id}&menu_id={menu.id}')
-
-    @route('/aml/alerts', type='http', auth='user')
-    def alerts(self, **kw):
-        """Alerts list view."""
-        action = request.env.ref('nexaml.action_alert')
-        menu = request.env.ref('nexaml.menu_alerts')
-        return request.redirect(f'/web#action={action.id}&menu_id={menu.id}')
-
-    @route('/aml/screenings', type='http', auth='user')
-    def screenings(self, **kw):
-        """Screenings list view."""
-        action = request.env.ref('nexaml.action_screening')
-        menu = request.env.ref('nexaml.menu_screenings')
-        return request.redirect(f'/web#action={action.id}&menu_id={menu.id}')
-
-    @route('/aml/rules', type='http', auth='user')
-    def rules(self, **kw):
-        """Transaction rules configuration."""
-        action = request.env.ref('nexaml.action_transaction_rule')
-        menu = request.env.ref('nexaml.menu_transaction_rules')
-        return request.redirect(f'/web#action={action.id}&menu_id={menu.id}')
-
     @route('/aml/case/<int:case_id>', type='http', auth='user')
     def case_detail(self, case_id, **kw):
         """Individual case view."""

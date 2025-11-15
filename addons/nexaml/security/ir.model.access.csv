@@ -10,9 +10,13 @@ access_aml_case_note_user,access.aml.case.note.user,model_aml_case_note,base.gro
 access_aml_case_task_user,access.aml.case.task.user,model_aml_case_task,base.group_user,1,1,1,1
 access_nexaml_ewra_run_user,access.nexaml.ewra.run.user,model_nexaml_ewra_run,base.group_user,1,1,1,1
 access_nexaml_ewra_pillar_user,access.nexaml.ewra.pillar.user,model_nexaml_ewra_pillar,base.group_user,1,1,1,1
+access_nexaml_ewra_settings_user,access.nexaml.ewra.settings.user,model_nexaml_ewra_settings,base.group_user,1,1,1,1
 access_nexaml_ewra_settings_snapshot_user,access.nexaml.ewra.settings.snapshot.user,model_nexaml_ewra_settings_snapshot,base.group_user,1,1,1,1
 access_nexaml_ewra_narrative_user,access.nexaml.ewra.narrative.user,model_nexaml_ewra_narrative,base.group_user,1,1,1,1
+access_nexaml_cra_settings_user,access.nexaml.cra.settings.user,model_nexaml_cra_settings,base.group_user,1,1,1,1
 access_aml_case_pdf_action_user,access.aml.case.pdf.action.user,model_aml_case_pdf_action,base.group_user,1,1,1,1
 access_res_partner_pdf_action_user,access.res.partner.pdf.action.user,model_res_partner_pdf_action,base.group_user,1,1,1,1
 access_nexaml_ewra_pdf_action_user,access.nexaml.ewra.pdf.action.user,model_nexaml_ewra_pdf_action,base.group_user,1,1,1,1
 access_report_wizard_user,access.report.wizard.user,model_report_wizard,base.group_user,1,1,1,1
+access_nexaml_ewra_wizard_user,access.nexaml.ewra.wizard.user,model_nexaml_ewra_wizard,base.group_user,1,1,1,1
+access_nexaml_ewra_wizard_pillar_user,access.nexaml.ewra.wizard.pillar.user,model_nexaml_ewra_wizard_pillar,base.group_user,1,1,1,1

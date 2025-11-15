@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extended Report Actions for New Report Types -->
+
+    <record id="action_report_dpmsr" model="ir.actions.report">
+        <field name="name">Domestic PEP Monitoring &amp; Sanctions Report</field>
+        <field name="model">report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">nexaml.report_dpmsr_template</field>
+        <field name="report_file">nexaml.report_dpmsr_template</field>
+        <field name="binding_model_id" ref="model_report_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_pnmr" model="ir.actions.report">
+        <field name="name">PEP Name Match Report</field>
+        <field name="model">report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">nexaml.report_pnmr_template</field>
+        <field name="report_file">nexaml.report_pnmr_template</field>
+        <field name="binding_model_id" ref="model_report_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_cnmr" model="ir.actions.report">
+        <field name="name">Country Name Match Report</field>
+        <field name="model">report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">nexaml.report_cnmr_template</field>
+        <field name="report_file">nexaml.report_cnmr_template</field>
+        <field name="binding_model_id" ref="model_report_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_aif" model="ir.actions.report">
+        <field name="name">Account Information Form</field>
+        <field name="model">report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">nexaml.report_aif_template</field>
+        <field name="report_file">nexaml.report_aif_template</field>
+        <field name="binding_model_id" ref="model_report_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_aift" model="ir.actions.report">
+        <field name="name">Account Information Form - Threshold</field>
+        <field name="model">report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">nexaml.report_aift_template</field>
+        <field name="report_file">nexaml.report_aift_template</field>
+        <field name="binding_model_id" ref="model_report_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_ecdd" model="ir.actions.report">
+        <field name="name">Enhanced Customer Due Diligence Report</field>
+        <field name="model">report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">nexaml.report_ecdd_template</field>
+        <field name="report_file">nexaml.report_ecdd_template</field>
+        <field name="binding_model_id" ref="model_report_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_basic" model="ir.actions.report">
+        <field name="name">Basic Customer Report</field>
+        <field name="model">report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">nexaml.report_basic_template</field>
+        <field name="report_file">nexaml.report_basic_template</field>
+        <field name="binding_model_id" ref="model_report_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- DPMSR Report Template -->
+    <template id="report_dpmsr_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">Domestic PEP Monitoring &amp; Sanctions Report (DPMSR)</h2>
+
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <strong>Report Date:</strong> <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                            </div>
+                            <div class="col-6">
+                                <strong>Period:</strong> <span t-esc="wizard.date_from"/> to <span t-esc="wizard.date_to"/>
+                            </div>
+                        </div>
+
+                        <t t-set="partners" t-value="wizard.partner_ids if wizard.query_type == 'single' else env['res.partner'].search(wizard._build_advanced_filter_domain() + [('|'), ('pep_status', '=', True), ('sanctions_status', '=', 'match')])"/>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <strong>Total Records:</strong> <span t-esc="len(partners)"/>
+                            </div>
+                        </div>
+
+                        <h4 class="mt-4">PEP &amp; Sanctioned Entities</h4>
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Type</th>
+                                    <th>Country</th>
+                                    <th>PEP Status</th>
+                                    <th>Sanctions Status</th>
+                                    <th>Risk Level</th>
+                                    <th>Last Screening</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="partners" t-as="partner">
+                                    <tr>
+                                        <td><span t-field="partner.name"/></td>
+                                        <td><span t-esc="'Company' if partner.is_company else 'Individual'"/></td>
+                                        <td><span t-field="partner.country_id.name"/></td>
+                                        <td>
+                                            <span t-if="partner.pep_status" class="badge badge-warning">PEP</span>
+                                            <span t-else="">-</span>
+                                        </td>
+                                        <td>
+                                            <span t-attf-class="badge badge-{{partner.sanctions_status == 'match' and 'danger' or partner.sanctions_status == 'clear' and 'success' or 'secondary'}}">
+                                                <span t-esc="partner.sanctions_status.upper() if partner.sanctions_status else 'N/A'"/>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span t-attf-class="badge badge-{{partner.risk_level == 'high' and 'danger' or partner.risk_level == 'medium' and 'warning' or 'success'}}">
+                                                <span t-esc="partner.risk_level.upper() if partner.risk_level else 'N/A'"/>
+                                            </span>
+                                        </td>
+                                        <td><span t-field="partner.last_screening_date"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- PNMR Report Template -->
+    <template id="report_pnmr_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">PEP Name Match Report (PNMR)</h2>
+
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <strong>Report Date:</strong> <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                            </div>
+                            <div class="col-6">
+                                <strong>Period:</strong> <span t-esc="wizard.date_from"/> to <span t-esc="wizard.date_to"/>
+                            </div>
+                        </div>
+
+                        <t t-set="partners" t-value="wizard.partner_ids if wizard.query_type == 'single' else env['res.partner'].search(wizard._build_advanced_filter_domain() + [('pep_status', '=', True)])"/>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <strong>Total PEP Matches:</strong> <span t-esc="len(partners)"/>
+                            </div>
+                        </div>
+
+                        <h4 class="mt-4">Politically Exposed Persons</h4>
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Type</th>
+                                    <th>Country</th>
+                                    <th>Risk Level</th>
+                                    <th>EDD Required</th>
+                                    <th>Last Assessment</th>
+                                    <th>Related Parties (UBOs)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="partners" t-as="partner">
+                                    <tr>
+                                        <td><span t-field="partner.name"/></td>
+                                        <td><span t-esc="'Company' if partner.is_company else 'Individual'"/></td>
+                                        <td><span t-field="partner.country_id.name"/></td>
+                                        <td>
+                                            <span t-attf-class="badge badge-{{partner.risk_level == 'high' and 'danger' or partner.risk_level == 'medium' and 'warning' or 'success'}}">
+                                                <span t-esc="partner.risk_level.upper() if partner.risk_level else 'N/A'"/>
+                                            </span>
+                                        </td>
+                                        <td><span t-esc="'Yes' if partner.edd_required else 'No'"/></td>
+                                        <td><span t-field="partner.last_assessment_date"/></td>
+                                        <td>
+                                            <t t-if="partner.is_company">
+                                                <t t-set="pep_ubos" t-value="partner.child_ids.filtered(lambda c: c.is_ubo and c.pep_status)"/>
+                                                <span t-if="pep_ubos" t-esc="len(pep_ubos)"/> PEP UBO(s)
+                                                <span t-else="">None</span>
+                                            </t>
+                                            <t t-else="">N/A</t>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- CNMR Report Template -->
+    <template id="report_cnmr_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">Country Name Match Report (CNMR)</h2>
+
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <strong>Report Date:</strong> <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                            </div>
+                            <div class="col-6">
+                                <strong>Period:</strong> <span t-esc="wizard.date_from"/> to <span t-esc="wizard.date_to"/>
+                            </div>
+                        </div>
+
+                        <t t-set="partners" t-value="wizard.partner_ids if wizard.query_type == 'single' else env['res.partner'].search(wizard._build_advanced_filter_domain())"/>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <strong>Total Records:</strong> <span t-esc="len(partners)"/>
+                            </div>
+                        </div>
+
+                        <h4 class="mt-4">High-Risk Country Matches</h4>
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Type</th>
+                                    <th>Country</th>
+                                    <th>Geography Risk</th>
+                                    <th>Risk Level</th>
+                                    <th>EDD Required</th>
+                                    <th>Last Assessment</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="partners" t-as="partner">
+                                    <tr>
+                                        <td><span t-field="partner.name"/></td>
+                                        <td><span t-esc="'Company' if partner.is_company else 'Individual'"/></td>
+                                        <td>
+                                            <strong><span t-field="partner.country_id.name"/></strong>
+                                            (<span t-field="partner.country_id.code"/>)
+                                        </td>
+                                        <td><span t-esc="'%.2f' % partner.geography_risk"/></td>
+                                        <td>
+                                            <span t-attf-class="badge badge-{{partner.risk_level == 'high' and 'danger' or partner.risk_level == 'medium' and 'warning' or 'success'}}">
+                                                <span t-esc="partner.risk_level.upper() if partner.risk_level else 'N/A'"/>
+                                            </span>
+                                        </td>
+                                        <td><span t-esc="'Yes' if partner.edd_required else 'No'"/></td>
+                                        <td><span t-field="partner.last_assessment_date"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- AIF, AIFT, ECDD, BASIC templates continue in next message due to length -->
+
+</odoo>

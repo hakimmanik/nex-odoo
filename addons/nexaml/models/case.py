@@ -34,7 +34,9 @@ class Case(models.Model):
     )
     case_type = fields.Selection(
         [('transaction', 'Transaction Monitoring'),
-         ('screening', 'Sanctions Screening'),
+         ('sanctions', 'Sanctions Screening'),
+         ('pep', 'PEP Screening'),
+         ('adverse_media', 'Adverse Media'),
          ('risk', 'Risk Assessment'),
          ('other', 'Other')],
         string='Case Type',

@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- CRA Methodology View -->
+    <record id="view_cra_methodology" model="ir.ui.view">
+        <field name="name">CRA Methodology</field>
+        <field name="model">ir.ui.menu</field>
+        <field name="arch" type="xml">
+            <form string="CRA Methodology" create="false" edit="false" delete="false">
+                <sheet>
+                    <div class="o_stat_card" style="max-width: 100%; padding: 2rem;">
+                        <div style="max-width: 900px; margin: 0 auto; line-height: 1.6;">
+                            <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem; color: #1f2937;">
+                                Customer Risk Assessment (CRA) Methodology
+                            </h1>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">1. Objective</h2>
+                            <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                The Customer Risk Assessment (CRA) constitutes an automated, bot-driven evaluation framework designed to assess each customer's exposure to Money Laundering (ML), Terrorist Financing (TF), and Proliferation Financing (PF) risks.
+                            </p>
+                            <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                The fundamental purpose of this methodology is to establish a <strong>data-driven, automated, and fully auditable</strong> framework that ensures strict adherence to Financial Action Task Force (FATF) Recommendations, Certified Anti-Money Laundering Specialist (CAMS) industry standards, and applicable local regulatory requirements.
+                            </p>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>The CRA outcomes serve multiple critical organizational functions:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                <li><strong>Automated Customer Risk Identification:</strong> Bot-driven systematic identification and measurement of risk exposures across seven comprehensive customer risk factors</li>
+                                <li><strong>Control Enhancement and Resource Optimization:</strong> Inform strategic decisions regarding customer-specific control framework improvements</li>
+                                <li><strong>Governance and Oversight Support:</strong> Provide senior management and the Board with comprehensive, actionable intelligence</li>
+                            </ul>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">2. Enhanced Customer Risk Assessment (7-Factor Model)</h2>
+                            <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                The CRA framework employs a sophisticated seven-factor customer risk assessment model that systematically evaluates risk exposure through comprehensive analysis of customer characteristics and behaviors.
+                            </p>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Customer Risk Factors (7-Factor Model):</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 0.5rem; color: #4b5563;">
+                                <li><strong>Customer Type (15% Weight)</strong> – Individual vs. Legal Entity risk assessment</li>
+                                <li><strong>Residency Status (10% Weight)</strong> – Resident vs. Non-Resident classification</li>
+                                <li><strong>Country Risk (15% Weight)</strong> – Geographic jurisdiction risk evaluation</li>
+                                <li><strong>Registration Type (10% Weight)</strong> – Mainland, Free Zone, or Offshore registration</li>
+                                <li><strong>Ownership Structure (10% Weight)</strong> – Transparent vs. Complex ownership analysis</li>
+                                <li><strong>Business Sector (10% Weight)</strong> – Industry and business activity risk profiling</li>
+                                <li><strong>PEP Exposure (30% Weight)</strong> – Politically Exposed Person status and exposure</li>
+                            </ul>
+                            <p style="margin-bottom: 1rem; color: #4b5563;"><strong>Risk Rating Scale:</strong> 1 = Low Risk, 2 = Medium Risk, 3 = High Risk</p>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">3. Data Integrity and Completeness</h2>
+                            <p style="margin-bottom: 0.75rem; color: #4b5563;"><strong>Mandatory Field Requirements:</strong></p>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;">
+                                The CRA framework incorporates rigorous data quality controls to ensure assessment accuracy and reliability. All critical data elements utilized in risk scoring calculations are designated as mandatory fields.
+                            </p>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>The following fields constitute mandatory data requirements:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                <li>Customer classification (individual or corporate entity)</li>
+                                <li>Residency jurisdiction and nationality information</li>
+                                <li>Country of incorporation and Ultimate Beneficial Owner (UBO) nationalities</li>
+                                <li>Politically Exposed Person (PEP) status and sanctions screening results</li>
+                                <li>Customer onboarding and service delivery channel</li>
+                                <li>Associated product(s) and service(s) relationships</li>
+                            </ul>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>This comprehensive data governance approach delivers:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                <li><strong>Complete Data Coverage:</strong> 100% data completeness across all CRA assessment inputs</li>
+                                <li><strong>Computational Accuracy:</strong> Precise calculation of risk scores through verified data sets</li>
+                                <li><strong>Regulatory Defensibility:</strong> Comprehensive documentation and full audit traceability</li>
+                            </ul>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">4. Automated Assessment Flow (Bot CRA)</h2>
+                            <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                The CRA methodology employs an automated, bot-driven assessment process designed to ensure systematic and comprehensive risk evaluation.
+                            </p>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Bot CRA Evaluation Process:</strong></p>
+                            <ol style="margin-left: 1.5rem; margin-bottom: 0.75rem; color: #4b5563;">
+                                <li><strong>Automated Rule Engine</strong> – Bot CRA automatically evaluates all seven customer risk factors using configurable business rules</li>
+                                <li><strong>Weighted Score Calculation</strong> – Each factor score is multiplied by its weight and aggregated</li>
+                                <li><strong>Policy Override Application</strong> – System applies policy overrides (e.g., foreign PEP minimum high risk)</li>
+                                <li><strong>Real-time Risk Determination</strong> – Final risk rating is automatically calculated and updated</li>
+                            </ol>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>CRA Rule Engine Architecture:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                <li><strong>Enhanced Customer Risk Rule</strong> – Primary rule evaluating all seven customer factors with proper weighting</li>
+                                <li><strong>Enhanced Product Risk Rule</strong> – Evaluates product/service risk levels with user-configurable scoring</li>
+                                <li><strong>Enhanced Geography Risk Rule</strong> – CRR integration with country risk ratings and FATF compliance status</li>
+                                <li><strong>Enhanced Channel Risk Rule</strong> – Comprehensive onboarding channel risk assessment</li>
+                                <li><strong>PEP Check Rule</strong> – Automated PEP screening and risk evaluation</li>
+                                <li><strong>CRA Scenarios Rule</strong> – Handles regulatory, reputational, and override scenarios</li>
+                            </ul>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">5. Automated Risk Score Calculation</h2>
+                            <p style="margin-bottom: 0.75rem; color: #4b5563;"><strong>Bot CRA Scoring Algorithm:</strong></p>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;">
+                                The Bot CRA system automatically calculates customer risk scores through weighted evaluation of seven distinct risk factors.
+                            </p>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Factor-Specific Scoring:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 0.75rem; color: #4b5563;">
+                                <li><strong>Customer Type:</strong> Individual (Score: 1), Legal Entity (Score: 3)</li>
+                                <li><strong>Residency Status:</strong> Resident (Score: 1), Non-Resident (Score: 3)</li>
+                                <li><strong>Country Risk:</strong> Low-risk (1), Medium-risk (2), High-risk (3) jurisdictions with CRR integration</li>
+                                <li><strong>Registration Type:</strong> Mainland (1), Free Zone (2), Offshore (3)</li>
+                                <li><strong>Ownership Structure:</strong> Transparent (1), Complex/Opaque (3)</li>
+                                <li><strong>Business Sector:</strong> Low-risk (1), Medium-risk (2), High-risk (3) sectors</li>
+                                <li><strong>PEP Exposure:</strong> No PEP (1), Domestic PEP/RCA (2), Foreign/International PEP (3)</li>
+                            </ul>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Weighted Aggregation Formula:</strong></p>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563; font-family: monospace; background: #f3f4f6; padding: 0.5rem; border-radius: 4px;">
+                                Final Score = (CustomerType × 0.15) + (ResidencyStatus × 0.10) + (CountryRisk × 0.15) +<br/>
+                                (RegistrationType × 0.10) + (OwnershipStructure × 0.10) + (BusinessSector × 0.10) +<br/>
+                                (PEPExposure × 0.30)
+                            </p>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Risk Classification:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                <li><strong>Low Risk:</strong> Score &lt; 1.7</li>
+                                <li><strong>Medium Risk:</strong> Score 1.7 - 2.4</li>
+                                <li><strong>High Risk:</strong> Score ≥ 2.4</li>
+                            </ul>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">6. Policy Overrides and Special Rules</h2>
+                            <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                The Bot CRA system includes automated policy overrides that ensure minimum risk levels for specific high-risk scenarios:
+                            </p>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Foreign PEP Override:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 0.75rem; color: #4b5563;">
+                                <li>When foreign PEP is identified, system automatically assigns minimum High risk rating (Score: 2.4)</li>
+                                <li>Applies regardless of calculated score from other factors</li>
+                                <li>Ensures regulatory compliance for PEP risk management</li>
+                            </ul>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>KYC Expiration Policy:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 0.75rem; color: #4b5563;">
+                                <li>Customers with expired KYC documentation automatically receive minimum High risk rating</li>
+                                <li>Ensures timely KYC renewal and compliance with regulatory requirements</li>
+                            </ul>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Sanctions and Screening Integration:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                <li><strong>Sanctions Screening Results:</strong> Direct integration with screening outcomes</li>
+                                <li><strong>Case Management Integration:</strong> Real-time updates based on case resolutions</li>
+                                <li><strong>Multi-layer UBO Screening:</strong> Extends sanctions checks through ownership chains (up to 5 levels)</li>
+                            </ul>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">7. Integration with Enterprise-Wide Risk Assessment (EWRA)</h2>
+                            <p style="margin-bottom: 0.75rem; color: #4b5563;"><strong>CRA as EWRA Input:</strong></p>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;">
+                                The Bot CRA outputs serve as critical inputs for the Enterprise-Wide Risk Assessment (EWRA) framework:
+                            </p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 0.75rem; color: #4b5563;">
+                                <li><strong>Customer Pillar:</strong> CRA results directly feed into the Customer risk pillar in EWRA</li>
+                                <li><strong>Weighted Contribution:</strong> Customer risk represents 40% of overall EWRA calculation</li>
+                                <li><strong>Real-time Updates:</strong> CRA changes automatically reflect in EWRA calculations</li>
+                            </ul>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>EWRA Pillar Structure:</strong></p>
+                            <ol style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                <li><strong>Customer Risk (40%)</strong> – Bot CRA outputs and customer risk distribution</li>
+                                <li><strong>Product Risk (25%)</strong> – Product and service risk assessment</li>
+                                <li><strong>Geography Risk (20%)</strong> – Geographic and jurisdictional risk analysis</li>
+                                <li><strong>Channel Risk (15%)</strong> – Onboarding and delivery channel risk evaluation</li>
+                            </ol>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">8. Bot CRA Advantages and Features</h2>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Automation and Consistency:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 0.75rem; color: #4b5563;">
+                                <li><strong>Automated Evaluation:</strong> Eliminates manual bias and ensures consistent application of risk criteria</li>
+                                <li><strong>Real-time Processing:</strong> Immediate risk assessment as customer data is updated</li>
+                                <li><strong>Rule-based Logic:</strong> Transparent, auditable decision-making process</li>
+                                <li><strong>Scalable Solution:</strong> Handles large customer volumes without human intervention</li>
+                            </ul>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Comprehensive Data Integration:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 0.75rem; color: #4b5563;">
+                                <li><strong>Customer Database:</strong> Real-time access to customer profiles and relationships</li>
+                                <li><strong>Sanctions Screening:</strong> Integration with global sanctions databases and screening results</li>
+                                <li><strong>PEP Databases:</strong> Access to Politically Exposed Person information</li>
+                                <li><strong>Country Risk Data:</strong> CRR ratings and FATF compliance status integration</li>
+                                <li><strong>Case Management:</strong> Real-time updates from investigative processes</li>
+                            </ul>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Audit and Compliance Features:</strong></p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                <li><strong>Full Audit Trail:</strong> Complete logging of all risk assessment decisions and factor scores</li>
+                                <li><strong>Rule Transparency:</strong> Clear documentation of scoring logic and business rules</li>
+                                <li><strong>Regulatory Alignment:</strong> Designed to meet FATF, CAMS, and local regulatory requirements</li>
+                                <li><strong>Policy Enforcement:</strong> Automated application of organizational risk policies</li>
+                            </ul>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">9. Summary</h2>
+                            <p style="margin-bottom: 0.5rem; color: #4b5563;">
+                                The Bot CRA methodology represents a significant advancement in automated customer risk assessment, providing:
+                            </p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                <li><strong>Comprehensive 7-factor risk evaluation</strong> with proper weighting and scoring</li>
+                                <li><strong>Automated, consistent decision-making</strong> through rule-based evaluation</li>
+                                <li><strong>Real-time risk assessment</strong> with immediate updates and alerts</li>
+                                <li><strong>Full regulatory compliance</strong> through policy enforcement and audit trails</li>
+                                <li><strong>Enterprise integration</strong> with EWRA and other risk management systems</li>
+                                <li><strong>Scalable, efficient processing</strong> of large customer volumes</li>
+                            </ul>
+                            <p style="margin-bottom: 1rem; color: #4b5563;">
+                                This automated approach ensures consistent, objective, and auditable customer risk assessments while maintaining the flexibility to adapt to changing regulatory requirements and business needs.
+                            </p>
+
+                            <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 0.875rem;">
+                                <em>Bot CRA Methodology - Powered by NexAML</em>
+                            </div>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_cra_methodology" model="ir.actions.act_window">
+        <field name="name">CRA Methodology</field>
+        <field name="res_model">ir.ui.menu</field>
+        <field name="view_mode">form</field>
+        <field name="path">nexaml-cra-methodology</field>
+        <field name="view_id" ref="view_cra_methodology"/>
+        <field name="target">current</field>
+        <field name="context">{'form_view_ref': 'nexaml.view_cra_methodology'}</field>
+    </record>
+
+    <!-- CRA Menu -->
+    <menuitem id="menu_cra"
+              name="CRA"
+              parent="nexaml.menu_nexaml_root"
+              sequence="20"/>
+
+    <menuitem id="menu_cra_methodology"
+              name="Methodology"
+              parent="menu_cra"
+              action="action_cra_methodology"
+              sequence="10"/>
+
+    <!-- CRA Settings Views -->
+    <record id="view_cra_settings_list" model="ir.ui.view">
+        <field name="name">nexaml.cra.settings.list</field>
+        <field name="model">nexaml.cra.settings</field>
+        <field name="arch" type="xml">
+            <list string="CRA Settings" create="true" edit="true" delete="true">
+                <field name="company_id"/>
+                <field name="pep_status_enabled"/>
+                <field name="high_risk_jurisdiction_enabled"/>
+                <field name="confirmed_sanctions_enabled"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_cra_settings_form" model="ir.ui.view">
+        <field name="name">nexaml.cra.settings.form</field>
+        <field name="model">nexaml.cra.settings</field>
+        <field name="arch" type="xml">
+            <form string="CRA Settings">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="company_id" readonly="1"/></h1>
+                    </div>
+
+                    <notebook>
+                        <page string="Critical Risk Factors" name="critical">
+                            <group string="Policy Overrides">
+                                <group string="PEP Status">
+                                    <field name="pep_status_enabled"/>
+                                    <field name="pep_status_action" invisible="pep_status_enabled == False"/>
+                                </group>
+                                <group string="High Risk Jurisdiction">
+                                    <field name="high_risk_jurisdiction_enabled"/>
+                                    <field name="high_risk_jurisdiction_action" invisible="high_risk_jurisdiction_enabled == False"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Opaque Ownership">
+                                    <field name="opaque_ownership_enabled"/>
+                                    <field name="opaque_ownership_action" invisible="opaque_ownership_enabled == False"/>
+                                </group>
+                                <group string="Confirmed Sanctions">
+                                    <field name="confirmed_sanctions_enabled"/>
+                                    <field name="confirmed_sanctions_action" invisible="confirmed_sanctions_enabled == False"/>
+                                </group>
+                            </group>
+                            <div class="alert alert-info mt-3" role="alert">
+                                <strong>Critical Risk Factors:</strong> These scenarios automatically override standard CRA calculations when detected.<br/>
+                                <strong>Actions:</strong> Choose to either elevate customer to high risk or block customer entirely.
+                            </div>
+                        </page>
+
+                        <page string="Regulatory Scenarios" name="regulatory">
+                            <group>
+                                <group string="SAR/STR Filed">
+                                    <field name="sar_str_filed_enabled"/>
+                                    <field name="sar_str_filed_action" invisible="sar_str_filed_enabled == False"/>
+                                </group>
+                                <group string="Law Enforcement Enquiry">
+                                    <field name="law_enforcement_enquiry_enabled"/>
+                                    <field name="law_enforcement_enquiry_action" invisible="law_enforcement_enquiry_enabled == False"/>
+                                </group>
+                            </group>
+                            <div class="alert alert-warning mt-3" role="alert">
+                                <strong>Regulatory Scenarios:</strong> Actions triggered by regulatory events such as SAR/STR filings or law enforcement enquiries.<br/>
+                                These scenarios ensure compliance with regulatory reporting requirements.
+                            </div>
+                        </page>
+
+                        <page string="Reputational Scenarios" name="reputational">
+                            <group col="4">
+                                <group string="Adverse Media" colspan="2">
+                                    <field name="adverse_media_confirmed_enabled"/>
+                                    <field name="adverse_media_confirmed_action" invisible="adverse_media_confirmed_enabled == False"/>
+                                </group>
+                                <group colspan="2"/>
+                            </group>
+                            <div class="alert alert-info mt-3" role="alert">
+                                <strong>Reputational Scenarios:</strong> Actions based on confirmed adverse media findings.<br/>
+                                Helps manage reputational risk exposure from customer associations.
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Delete old action first -->
+    <delete model="ir.actions.act_window" id="action_cra_settings"/>
+
+    <!-- Create server action to open settings -->
+    <record id="action_cra_settings_server" model="ir.actions.server">
+        <field name="name">CRA Settings</field>
+        <field name="model_id" ref="model_nexaml_cra_settings"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_cra_settings()</field>
+    </record>
+
+    <menuitem id="menu_cra_settings"
+              name="Settings"
+              parent="menu_cra"
+              action="action_cra_settings_server"
+              sequence="20"/>
+</odoo>

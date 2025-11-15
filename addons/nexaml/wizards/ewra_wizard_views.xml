@@ -1,0 +1,1051 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================== -->
+    <!-- EWRA Wizard Pillar Tree View (for Step 3)         -->
+    <!-- ================================================== -->
+    <record id="view_ewra_wizard_pillar_tree" model="ir.ui.view">
+        <field name="name">nexaml.ewra.wizard.pillar.tree</field>
+        <field name="model">nexaml.ewra.wizard.pillar</field>
+        <field name="arch" type="xml">
+            <list string="Risk Pillars" editable="bottom" create="0" delete="0">
+                <field name="sequence" widget="handle"/>
+                <field name="pillar" readonly="1"/>
+                <field name="low_pct" widget="percentage"/>
+                <field name="medium_pct" widget="percentage"/>
+                <field name="high_pct" widget="percentage"/>
+                <field name="inherent_score" readonly="1" widget="float" digits="[16,2]"/>
+                <field name="inherent_label" readonly="1"/>
+                <field name="control_band"/>
+                <field name="custom_control_pct"
+                       invisible="control_band != 'custom'"
+                       required="control_band == 'custom'"
+                       widget="percentage"/>
+                <field name="control_pct" readonly="1" widget="percentage"/>
+                <field name="residual_score" readonly="1" widget="float" digits="[16,2]"/>
+                <field name="residual_label" readonly="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Main EWRA Wizard Form (5 Steps) - Enhanced UI     -->
+    <!-- ================================================== -->
+    <record id="view_ewra_wizard_form" model="ir.ui.view">
+        <field name="name">nexaml.ewra.wizard.form</field>
+        <field name="model">nexaml.ewra.wizard</field>
+        <field name="arch" type="xml">
+            <form string="EWRA Assessment Wizard" class="o_ewra_wizard">
+                <header>
+                    <field name="current_step" invisible="1"/>
+                </header>
+
+                <sheet class="o_ewra_wizard_sheet">
+                    <!-- Hidden fields -->
+                    <field name="company_id" invisible="1"/>
+                    <field name="preview_data" invisible="1"/>
+
+                    <!-- Progress bar at top of sheet, centered -->
+                    <div class="o_wizard_progress mb-4">
+                        <div class="o_wizard_steps">
+                            <div class="o_wizard_step" t-attf-class="{{current_step >= 1 and 'active' or ''}} {{current_step > 1 and 'completed' or ''}}">
+                                <div class="o_wizard_step_number">1</div>
+                                <div class="o_wizard_step_label">Data &amp; Period</div>
+                            </div>
+                            <div class="o_wizard_step_connector" t-attf-class="{{current_step > 1 and 'completed' or ''}}"/>
+                            <div class="o_wizard_step" t-attf-class="{{current_step >= 2 and 'active' or ''}} {{current_step > 2 and 'completed' or ''}}">
+                                <div class="o_wizard_step_number">2</div>
+                                <div class="o_wizard_step_label">Inherent Risk</div>
+                            </div>
+                            <div class="o_wizard_step_connector" t-attf-class="{{current_step > 2 and 'completed' or ''}}"/>
+                            <div class="o_wizard_step" t-attf-class="{{current_step >= 3 and 'active' or ''}} {{current_step > 3 and 'completed' or ''}}">
+                                <div class="o_wizard_step_number">3</div>
+                                <div class="o_wizard_step_label">Controls</div>
+                            </div>
+                            <div class="o_wizard_step_connector" t-attf-class="{{current_step > 3 and 'completed' or ''}}"/>
+                            <div class="o_wizard_step" t-attf-class="{{current_step >= 4 and 'active' or ''}} {{current_step > 4 and 'completed' or ''}}">
+                                <div class="o_wizard_step_number">4</div>
+                                <div class="o_wizard_step_label">Residual Risk</div>
+                            </div>
+                            <div class="o_wizard_step_connector" t-attf-class="{{current_step > 4 and 'completed' or ''}}"/>
+                            <div class="o_wizard_step" t-attf-class="{{current_step >= 5 and 'active' or ''}}">
+                                <div class="o_wizard_step_number">5</div>
+                                <div class="o_wizard_step_label">Generate</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CSS Styling -->
+                    <style>
+                        .o_ewra_wizard .o_wizard_progress {
+                            background: #f8f9fa;
+                            padding: 1.5rem 2rem;
+                            border-radius: 8px;
+                            margin: 0 -24px 2rem -24px;
+                            text-align: center;
+                        }
+                        .o_ewra_wizard .o_wizard_steps {
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            max-width: 900px;
+                        }
+                        .o_ewra_wizard .o_wizard_step {
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            position: relative;
+                        }
+                        .o_ewra_wizard .o_wizard_step_number {
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 50%;
+                            background: #e9ecef;
+                            color: #6c757d;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-weight: bold;
+                            margin-bottom: 0.5rem;
+                            transition: all 0.3s;
+                        }
+                        .o_ewra_wizard .o_wizard_step.active .o_wizard_step_number {
+                            background: #7c3aed;
+                            color: white;
+                            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+                        }
+                        .o_ewra_wizard .o_wizard_step.completed .o_wizard_step_number {
+                            background: #10b981;
+                            color: white;
+                        }
+                        .o_ewra_wizard .o_wizard_step_label {
+                            font-size: 0.75rem;
+                            color: #6c757d;
+                            font-weight: 500;
+                            text-align: center;
+                        }
+                        .o_ewra_wizard .o_wizard_step.active .o_wizard_step_label {
+                            color: #7c3aed;
+                            font-weight: 600;
+                        }
+                        .o_ewra_wizard .o_wizard_step_connector {
+                            flex: 1;
+                            height: 2px;
+                            background: #e9ecef;
+                            margin: 0 1rem;
+                            position: relative;
+                            top: -20px;
+                        }
+                        .o_ewra_wizard .o_wizard_step_connector.completed {
+                            background: #10b981;
+                        }
+                        .o_ewra_wizard .o_stat_card {
+                            background: white;
+                            border: 1px solid #e5e7eb;
+                            border-radius: 8px;
+                            padding: 1.5rem;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                        }
+                        .o_ewra_wizard .o_stat_value {
+                            font-size: 2rem;
+                            font-weight: 700;
+                            color: #1f2937;
+                            margin-bottom: 0.25rem;
+                        }
+                        .o_ewra_wizard .o_stat_label {
+                            font-size: 0.875rem;
+                            color: #6b7280;
+                            font-weight: 500;
+                        }
+                        .o_ewra_wizard .o_risk_card {
+                            background: #f9fafb;
+                            border-left: 4px solid #7c3aed;
+                            padding: 1rem;
+                            border-radius: 4px;
+                            margin-bottom: 1rem;
+                        }
+                        .o_ewra_wizard .o_risk_card h4 {
+                            margin: 0 0 0.75rem 0;
+                            color: #374151;
+                            font-size: 0.875rem;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.05em;
+                        }
+                        .o_ewra_wizard .o_risk_row {
+                            display: grid;
+                            grid-template-columns: 140px auto;
+                            gap: 1rem;
+                            padding: 0.5rem 0;
+                            border-bottom: 1px solid #e5e7eb;
+                            align-items: center;
+                        }
+                        .o_ewra_wizard .o_risk_row:last-child {
+                            border-bottom: none;
+                        }
+                        .o_ewra_wizard .o_risk_row > div,
+                        .o_ewra_wizard .o_risk_row > span {
+                            text-align: left;
+                            display: inline;
+                            white-space: nowrap;
+                        }
+                        .o_ewra_wizard .o_risk_row .o_field_widget {
+                            display: inline !important;
+                        }
+                        .o_ewra_wizard .o_page_header {
+                            margin-bottom: 2rem;
+                        }
+                        .o_ewra_wizard .o_page_title {
+                            font-size: 1.5rem;
+                            font-weight: 700;
+                            color: #1f2937;
+                            margin-bottom: 0.5rem;
+                        }
+                        .o_ewra_wizard .o_page_subtitle {
+                            color: #6b7280;
+                            font-size: 0.875rem;
+                        }
+                        .o_ewra_wizard .o_wizard_footer {
+                            margin-top: 2rem;
+                            padding-top: 1.5rem;
+                            border-top: 1px solid #e5e7eb;
+                            text-align: right;
+                        }
+                        .o_ewra_wizard .o_wizard_footer button {
+                            margin-left: 0.5rem;
+                        }
+                        .o_ewra_wizard .o_stats_row {
+                            display: flex;
+                            gap: 1rem;
+                            margin-bottom: 2rem;
+                        }
+                        .o_ewra_wizard .o_stats_row > div {
+                            flex: 1;
+                        }
+                        .o_ewra_wizard .o_risk_row span:first-child {
+                            display: inline-flex;
+                            align-items: center;
+                            min-width: 140px;
+                        }
+                    </style>
+
+                    <!-- ========================================== -->
+                    <!-- STEP 1: View Data & Period                 -->
+                    <!-- ========================================== -->
+                    <div invisible="current_step != 1">
+                        <div class="o_page_header">
+                            <h2 class="o_page_title">Assessment Period &amp; Data Overview</h2>
+                            <p class="o_page_subtitle">Select the assessment period and review your customer risk profile</p>
+                        </div>
+
+                        <group>
+                            <group>
+                                <field name="period_start" required="1" widget="daterange" options="{'related_end_date': 'period_end'}"/>
+                                <field name="period_end" required="1"/>
+                            </group>
+                        </group>
+
+                        <div class="o_stats_row">
+                            <div class="o_stat_card">
+                                <div class="o_stat_value"><field name="total_customers" nolabel="1"/></div>
+                                <div class="o_stat_label">Total Customers</div>
+                            </div>
+                            <div class="o_stat_card">
+                                <div class="o_stat_value"><field name="pep_count" nolabel="1"/></div>
+                                <div class="o_stat_label">PEP Customers</div>
+                            </div>
+                        </div>
+
+                        <notebook>
+                            <page string="📊 Customer Overview" name="customer_overview">
+                                <group>
+                                    <group>
+                                        <div class="o_risk_card">
+                                            <h4>Customer Risk Distribution</h4>
+                                            <div class="o_risk_row">
+                                                <span>🟢 Low Risk</span>
+                                                <field name="preview_customer_low" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>🟡 Medium Risk</span>
+                                                <field name="preview_customer_medium" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>🔴 High Risk</span>
+                                                <field name="preview_customer_high" nolabel="1"/>
+                                            </div>
+                                        </div>
+                                    </group>
+                                    <group>
+                                        <div class="o_risk_card">
+                                            <h4>PEP Distribution</h4>
+                                            <div class="o_risk_row">
+                                                <span>Non-PEP</span>
+                                                <field name="preview_pep_none" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>Domestic PEP</span>
+                                                <field name="preview_pep_domestic" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>Foreign PEP</span>
+                                                <field name="preview_pep_foreign" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>International Org</span>
+                                                <field name="preview_pep_international" nolabel="1"/>
+                                            </div>
+                                        </div>
+                                    </group>
+                                </group>
+                            </page>
+
+                            <page string="🌍 Geography Risk" name="geography">
+                                <group>
+                                    <group>
+                                        <div class="o_risk_card">
+                                            <h4>Geography Risk Distribution</h4>
+                                            <div class="o_risk_row">
+                                                <span>🟢 Low Risk</span>
+                                                <field name="preview_geography_low" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>🟡 Medium Risk</span>
+                                                <field name="preview_geography_medium" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>🔴 High Risk</span>
+                                                <field name="preview_geography_high" nolabel="1"/>
+                                            </div>
+                                        </div>
+                                    </group>
+                                    <group>
+                                        <div class="o_risk_card">
+                                            <h4>Residency Status</h4>
+                                            <div class="o_risk_row">
+                                                <span>Resident</span>
+                                                <field name="preview_resident" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>Non-Resident</span>
+                                                <field name="preview_non_resident" nolabel="1"/>
+                                            </div>
+                                        </div>
+                                    </group>
+                                </group>
+                            </page>
+
+                            <page string="📦 Product &amp; Delivery" name="product_delivery">
+                                <group>
+                                    <group>
+                                        <div class="o_risk_card">
+                                            <h4>Product Risk Distribution</h4>
+                                            <div class="o_risk_row">
+                                                <span>🟢 Low Risk</span>
+                                                <field name="preview_products_low" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>🟡 Medium Risk</span>
+                                                <field name="preview_products_medium" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>🔴 High Risk</span>
+                                                <field name="preview_products_high" nolabel="1"/>
+                                            </div>
+                                        </div>
+                                    </group>
+                                    <group>
+                                        <div class="o_risk_card">
+                                            <h4>Delivery Channel Distribution</h4>
+                                            <div class="o_risk_row">
+                                                <span>🟢 Low Risk</span>
+                                                <field name="preview_delivery_low" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>🟡 Medium Risk</span>
+                                                <field name="preview_delivery_medium" nolabel="1"/>
+                                            </div>
+                                            <div class="o_risk_row">
+                                                <span>🔴 High Risk</span>
+                                                <field name="preview_delivery_high" nolabel="1"/>
+                                            </div>
+                                        </div>
+                                    </group>
+                                </group>
+                            </page>
+
+                            <page string="⚙️ Settings" name="settings">
+                                <group string="Risk Assessment Configuration">
+                                    <group string="Risk Thresholds">
+                                        <field name="custom_risk_threshold_medium"
+                                               string="Medium Risk Threshold"
+                                               help="Score threshold for medium risk (1.0-3.0). Default: 1.7"/>
+                                        <field name="custom_risk_threshold_high"
+                                               string="High Risk Threshold"
+                                               help="Score threshold for high risk (1.0-3.0). Default: 2.4"/>
+                                    </group>
+                                    <group string="Control Settings">
+                                        <field name="custom_default_control_band"
+                                               string="Default Control Band"
+                                               help="Default control effectiveness for new assessments"/>
+                                        <label for="include_supplier_pillar" string="Risk Pillars"/>
+                                        <field name="include_supplier_pillar" nolabel="1"/>
+                                    </group>
+                                </group>
+                            </page>
+
+                            <page string="📖 Methodology" name="methodology">
+                                <div class="o_stat_card" style="max-width: 100%; padding: 2rem;">
+                                    <div style="max-width: 900px; margin: 0 auto; line-height: 1.6;">
+                                        <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem; color: #1f2937;">
+                                            Enterprise-Wide Risk Assessment (EWRA) Methodology
+                                        </h1>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">1. Objective</h2>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                            The Enterprise-Wide Risk Assessment (EWRA) constitutes a comprehensive evaluation framework designed to assess the organization's exposure to Money Laundering (ML), Terrorist Financing (TF), and Proliferation Financing (PF) risks across all operational business units and service lines.
+                                        </p>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                            The fundamental purpose of this methodology is to establish a <strong>data-driven, repeatable, and fully auditable</strong> framework that ensures strict adherence to Financial Action Task Force (FATF) Recommendations, Certified Anti-Money Laundering Specialist (CAMS) industry standards, and applicable local regulatory requirements.
+                                        </p>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>The EWRA outcomes serve multiple critical organizational functions:</strong></p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                            <li><strong>Risk Identification and Quantification:</strong> Systematically identify and measure risk exposures across all material risk pillars</li>
+                                            <li><strong>Control Enhancement and Resource Optimization:</strong> Inform strategic decisions regarding control framework improvements and optimal allocation of compliance resources</li>
+                                            <li><strong>Governance and Oversight Support:</strong> Provide senior management and the Board of Directors with comprehensive, actionable intelligence</li>
+                                        </ul>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">2. Risk Pillars and Weightings</h2>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                            The EWRA framework systematically evaluates risk exposure through a comprehensive multi-dimensional analysis structure. Each risk pillar represents a distinct dimension of the organization's AML/CFT risk profile:
+                                        </p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 0.5rem; color: #4b5563;">
+                                            <li><strong>Customer Risk (40% Weight)</strong> – Risk arising from customer relationships, characteristics, and CRA assessment results</li>
+                                            <li><strong>Products &amp; Services Risk (25% Weight)</strong> – Risk inherent in the institution's product and service offerings</li>
+                                            <li><strong>Geography Risk (20% Weight)</strong> – Risk associated with jurisdictional exposure and geographic operations</li>
+                                            <li><strong>Delivery Channel Risk (15% Weight)</strong> – Risk related to customer onboarding and service delivery methods</li>
+                                            <li><strong>Supplier Risk (0% Weight)</strong> – Optional risk stemming from third-party relationships (currently not weighted)</li>
+                                        </ul>
+                                        <p style="margin-bottom: 1rem; color: #4b5563;"><strong>Risk Rating Scale:</strong> 1 = Low Risk, 2 = Medium Risk, 3 = High Risk</p>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">3. Data Integrity and Completeness</h2>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;"><strong>Mandatory Field Requirements:</strong></p>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;">
+                                            The EWRA framework incorporates rigorous data quality controls to ensure assessment accuracy and reliability. All critical data elements utilized in risk scoring calculations are designated as mandatory fields. The platform enforces strict data completeness validation, preventing the persistence or export of any records that fail to satisfy completeness requirements.
+                                        </p>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>The following fields constitute mandatory data requirements:</strong></p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                            <li>Customer classification (individual or corporate entity)</li>
+                                            <li>Residency jurisdiction and nationality information</li>
+                                            <li>Country of incorporation and Ultimate Beneficial Owner (UBO) nationalities</li>
+                                            <li>Politically Exposed Person (PEP) status and sanctions screening results</li>
+                                            <li>Customer onboarding and service delivery channel</li>
+                                            <li>Associated product(s) and service(s) relationships</li>
+                                        </ul>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>This comprehensive data governance approach delivers:</strong></p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                            <li><strong>Complete Data Coverage:</strong> 100% data completeness across all EWRA assessment inputs</li>
+                                            <li><strong>Computational Accuracy:</strong> Precise and consistent calculation of risk scores through verified data sets</li>
+                                            <li><strong>Regulatory Defensibility:</strong> Comprehensive documentation and full audit traceability</li>
+                                        </ul>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">4. Assessment Flow</h2>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                            The EWRA methodology employs a structured, three-stage sequential assessment process designed to ensure systematic and comprehensive risk evaluation:
+                                        </p>
+                                        <ol style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                            <li><strong>Inherent Risk Calculation</strong> – Automated system computation utilizing comprehensive customer and transaction data to establish baseline risk exposure levels prior to the application of mitigating controls</li>
+                                            <li><strong>Control Effectiveness Assessment</strong> – User-directed evaluation of control framework strength, incorporating validated percentage inputs that reflect the actual effectiveness of implemented AML/CFT controls</li>
+                                            <li><strong>Residual Risk Calculation</strong> – System-generated final risk determination based on pre-defined control logic, quantifying the remaining risk exposure after accounting for control effectiveness</li>
+                                        </ol>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">5. Inherent Risk Assessment</h2>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;"><strong>Definition:</strong> Inherent Risk represents the level of ML/TF/PF exposure before applying mitigating controls.</p>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>System Logic:</strong> The system automatically calculates an inherent score per pillar using embedded field logic. Each pillar's score is derived as a weighted mean:</p>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563; font-family: monospace; background: #f3f4f6; padding: 0.5rem; border-radius: 4px;">
+                                            (1 × Low% + 2 × Medium% + 3 × High%) ÷ 100
+                                        </p>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                            Risk level thresholds are configurable via EWRA Settings. Default thresholds: 1.0 to &lt; 1.7 = Low, 1.7 to &lt; 2.4 = Medium, 2.4 to 3.0 = High
+                                        </p>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">6. Control Effectiveness</h2>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;"><strong>Definition:</strong> Control Effectiveness measures the strength of AML/CFT controls mitigating inherent risk.</p>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;"><strong>Input and Calculation:</strong> Users select control effectiveness per pillar or enter a justified custom percentage.</p>
+                                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.875rem;">
+                                            <thead>
+                                                <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                                                    <th style="padding: 0.5rem; text-align: left; font-weight: 600; color: #374151;">Control Level</th>
+                                                    <th style="padding: 0.5rem; text-align: left; font-weight: 600; color: #374151;">Value (%)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Weak</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">30%</td>
+                                                </tr>
+                                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Adequate</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">60%</td>
+                                                </tr>
+                                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Strong</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">80%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Very Strong</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">90%</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Alternatively, users may apply the Control Library:</strong></p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 0.75rem; color: #4b5563;">
+                                            <li>EDD – 15%</li>
+                                            <li>SOW – 10%</li>
+                                            <li>SOF – 10%</li>
+                                            <li>Adverse Media – 12%</li>
+                                            <li>UBO Verification – 15%</li>
+                                            <li>Site Visit – 20%</li>
+                                        </ul>
+                                        <p style="margin-bottom: 1rem; color: #4b5563;">
+                                            <strong>Rules:</strong> Total control percentage capped at 70%. Minimum 35% required to qualify for a one-level downgrade in risk.
+                                        </p>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">7. Residual Risk Calculation</h2>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;"><strong>Definition:</strong> Residual Risk = Remaining exposure after applying control effectiveness.</p>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;"><strong>System Logic:</strong></p>
+                                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.875rem;">
+                                            <thead>
+                                                <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                                                    <th style="padding: 0.5rem; text-align: left; font-weight: 600; color: #374151;">Condition</th>
+                                                    <th style="padding: 0.5rem; text-align: left; font-weight: 600; color: #374151;">Residual Result</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Control &lt; 35%</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">No downgrade (Residual = Inherent)</td>
+                                                </tr>
+                                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Control ≥ 35%</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">One-level downgrade (High→Medium, Medium→Low)</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Below Low</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Not permitted (floor = Low)</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Overrides:</strong></p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                            <li>Confirmed Sanctions = Decline / Block</li>
+                                            <li>Foreign or Senior PEP = Minimum High Residual</li>
+                                        </ul>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">8. Final Risk Rank (Overall EWRA Rating)</h2>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;"><strong>Definition:</strong> The Final Risk Rank represents the organization's consolidated AML/CFT exposure after controls.</p>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Calculation:</strong> Final Risk Rank = Weighted Average of All Pillar Residual Risks</p>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>Default Weights:</strong></p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 0.75rem; color: #4b5563;">
+                                            <li>Customer – 40%</li>
+                                            <li>Products &amp; Services – 25%</li>
+                                            <li>Geography – 20%</li>
+                                            <li>Delivery Channel – 15%</li>
+                                        </ul>
+                                        <p style="margin-bottom: 1rem; color: #4b5563;">
+                                            Risk level thresholds are configurable via EWRA Settings. Default: 1.0 to &lt; 1.7 = Low, 1.7 to &lt; 2.4 = Medium, 2.4 to 3.0 = High
+                                        </p>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">9. Validation Rules</h2>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;">Before any EWRA report is generated:</p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                            <li>Low + Medium + High = 100% ± 0.1</li>
+                                            <li>Control total ≤ 70% cap</li>
+                                            <li>Downgrade limited to one level only</li>
+                                            <li>All mandatory fields completed – no missing data</li>
+                                            <li>PEP and Sanctions overrides enforced consistently</li>
+                                        </ul>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">10. Aggregation, AI Narrative &amp; Reporting</h2>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                            The EWRA platform incorporates sophisticated automated reporting capabilities that transform quantitative risk assessments into comprehensive, executive-ready documentation.
+                                        </p>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>The system automatically generates:</strong></p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 0.75rem; color: #4b5563;">
+                                            <li><strong>Per-Pillar Risk Metrics:</strong> Detailed outputs for each risk pillar showing Inherent Risk, Control Effectiveness, and Residual Risk</li>
+                                            <li><strong>Visual Risk Heatmap:</strong> Color-coded graphical representation of Residual Risk across all pillars</li>
+                                            <li><strong>Consolidated Assessment Table:</strong> Comprehensive tabular summary displaying all key metrics in audit-ready format</li>
+                                            <li><strong>Final Risk Rank Summary:</strong> Organization-wide risk assessment presented in both numeric and qualitative formats</li>
+                                        </ul>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>The integrated AI narrative engine produces:</strong></p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                            <li><strong>Executive Summary (120–160 words):</strong> High-level synthesis for senior management and board audiences</li>
+                                            <li><strong>Per-Pillar Analysis (80–120 words each):</strong> Detailed risk commentary explaining drivers and control effectiveness</li>
+                                            <li><strong>Conclusion (60–100 words):</strong> Forward-looking summary addressing recommended actions</li>
+                                        </ul>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">11. Governance &amp; Review</h2>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                            The EWRA framework operates within a robust governance structure that ensures appropriate oversight, accountability, and regulatory compliance.
+                                        </p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                            <li><strong>Assessment Frequency:</strong> Annual basis as minimum, with additional assessments triggered by material changes</li>
+                                            <li><strong>Multi-Level Review:</strong> Rigorous review by Compliance, approval by Senior Management, endorsement by Board of Directors</li>
+                                            <li><strong>Settings Documentation:</strong> Automatic snapshot of all system configurations preserved for audit purposes</li>
+                                            <li><strong>Historical Archive:</strong> All assessment results systematically archived with full version control</li>
+                                        </ul>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">12. Continuous Improvement</h2>
+                                        <p style="margin-bottom: 0.75rem; color: #4b5563;">
+                                            The EWRA framework incorporates a systematic continuous improvement process that leverages assessment outcomes to drive enhancements in the organization's AML/CFT risk management capabilities.
+                                        </p>
+                                        <p style="margin-bottom: 0.5rem; color: #4b5563;"><strong>EWRA assessment outcomes systematically inform:</strong></p>
+                                        <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: #4b5563;">
+                                            <li><strong>Control Framework Enhancement:</strong> Identification of control gaps and opportunities for strengthening mitigation measures</li>
+                                            <li><strong>Risk Parameter Calibration:</strong> Systematic refinement of risk classification methodologies</li>
+                                            <li><strong>Threshold Optimization:</strong> Ongoing adjustment of risk thresholds and control effectiveness weightings</li>
+                                            <li><strong>Methodology Validation:</strong> Continuous validation of system accuracy and alignment with regulatory standards</li>
+                                        </ul>
+
+                                        <h2 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: #374151;">13. Summary of Key Formulas</h2>
+                                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.875rem;">
+                                            <thead>
+                                                <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                                                    <th style="padding: 0.5rem; text-align: left; font-weight: 600; color: #374151;">Stage</th>
+                                                    <th style="padding: 0.5rem; text-align: left; font-weight: 600; color: #374151;">Formula</th>
+                                                    <th style="padding: 0.5rem; text-align: left; font-weight: 600; color: #374151;">Source</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Inherent Risk</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Weighted average (1–3) based on customer/product/geography/channel distribution</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">System (Bot CRA + Data Analysis)</td>
+                                                </tr>
+                                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Control Effectiveness</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">User-selected from dropdown (0%, 10%, 20%, 30%, 35%, 40%, 50%, 60%, 70%)</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">User (Dropdown Selection)</td>
+                                                </tr>
+                                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Residual Risk</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Inherent × (1 - effectiveness/100) if ≥ 35% threshold</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">System</td>
+                                                </tr>
+                                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Final Risk Rank</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Weighted mean: Customer 40%, Products 25%, Geography 20%, Delivery 15%</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">System</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Missing Data</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">Not applicable – mandatory fields enforced</td>
+                                                    <td style="padding: 0.5rem; color: #4b5563;">System Validation</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
+                                        <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 0.875rem;">
+                                            <em>Enterprise-Wide Risk Assessment (EWRA) - Powered by NexAML</em>
+                                        </div>
+                                    </div>
+                                </div>
+                            </page>
+                        </notebook>
+
+                        <!-- Navigation Footer -->
+                        <div class="o_wizard_footer">
+                            <button string="Cancel" special="cancel" class="btn-secondary"/>
+                            <button string="Next Step →" name="action_next_step" type="object" class="btn-primary"/>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- STEP 2: Review Inherent Risk              -->
+                    <!-- ========================================== -->
+                    <div invisible="current_step != 2">
+                        <div class="o_page_header">
+                            <h2 class="o_page_title">Inherent Risk Assessment</h2>
+                            <p class="o_page_subtitle">Review calculated inherent risk based on your customer data</p>
+                        </div>
+
+                        <group>
+                            <group>
+                                <div class="o_stat_card">
+                                    <div class="o_stat_value">
+                                        <field name="computed_overall_inherent" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                    <div class="o_stat_label">Overall Inherent Risk</div>
+                                    <field name="computed_overall_inherent_label" widget="badge" nolabel="1"
+                                           decoration-danger="computed_overall_inherent_label == 'high'"
+                                           decoration-warning="computed_overall_inherent_label == 'medium'"
+                                           decoration-success="computed_overall_inherent_label == 'low'"/>
+                                </div>
+                            </group>
+                        </group>
+
+                        <separator string="Pillar Breakdown"/>
+                        <group>
+                            <group>
+                                <div class="o_risk_card">
+                                    <h4>👥 Customer Risk</h4>
+                                    <div class="o_risk_row">
+                                        <span>Inherent Score</span>
+                                        <field name="customer_inherent_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Risk Level</span>
+                                        <field name="customer_inherent_label" nolabel="1" widget="badge"
+                                               decoration-danger="customer_inherent_label == 'high'"
+                                               decoration-warning="customer_inherent_label == 'medium'"
+                                               decoration-success="customer_inherent_label == 'low'"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Low %</span>
+                                        <span style="white-space: nowrap;"><field name="customer_low_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Medium %</span>
+                                        <span style="white-space: nowrap;"><field name="customer_medium_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>High %</span>
+                                        <span style="white-space: nowrap;"><field name="customer_high_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                </div>
+                            </group>
+                            <group>
+                                <div class="o_risk_card">
+                                    <h4>🌍 Geography Risk</h4>
+                                    <div class="o_risk_row">
+                                        <span>Inherent Score</span>
+                                        <field name="geography_inherent_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Risk Level</span>
+                                        <field name="geography_inherent_label" nolabel="1" widget="badge"
+                                               decoration-danger="geography_inherent_label == 'high'"
+                                               decoration-warning="geography_inherent_label == 'medium'"
+                                               decoration-success="geography_inherent_label == 'low'"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Low %</span>
+                                        <span style="white-space: nowrap;"><field name="geography_low_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Medium %</span>
+                                        <span style="white-space: nowrap;"><field name="geography_medium_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>High %</span>
+                                        <span style="white-space: nowrap;"><field name="geography_high_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                </div>
+                            </group>
+                        </group>
+                        <group>
+                            <group>
+                                <div class="o_risk_card">
+                                    <h4>📦 Products Risk</h4>
+                                    <div class="o_risk_row">
+                                        <span>Inherent Score</span>
+                                        <field name="products_inherent_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Risk Level</span>
+                                        <field name="products_inherent_label" nolabel="1" widget="badge"
+                                               decoration-danger="products_inherent_label == 'high'"
+                                               decoration-warning="products_inherent_label == 'medium'"
+                                               decoration-success="products_inherent_label == 'low'"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Low %</span>
+                                        <span style="white-space: nowrap;"><field name="products_low_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Medium %</span>
+                                        <span style="white-space: nowrap;"><field name="products_medium_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>High %</span>
+                                        <span style="white-space: nowrap;"><field name="products_high_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                </div>
+                            </group>
+                            <group>
+                                <div class="o_risk_card">
+                                    <h4>🚚 Delivery Risk</h4>
+                                    <div class="o_risk_row">
+                                        <span>Inherent Score</span>
+                                        <field name="delivery_inherent_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Risk Level</span>
+                                        <field name="delivery_inherent_label" nolabel="1" widget="badge"
+                                               decoration-danger="delivery_inherent_label == 'high'"
+                                               decoration-warning="delivery_inherent_label == 'medium'"
+                                               decoration-success="delivery_inherent_label == 'low'"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Low %</span>
+                                        <span style="white-space: nowrap;"><field name="delivery_low_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Medium %</span>
+                                        <span style="white-space: nowrap;"><field name="delivery_medium_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>High %</span>
+                                        <span style="white-space: nowrap;"><field name="delivery_high_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                </div>
+                            </group>
+                        </group>
+
+                        <!-- Navigation Footer -->
+                        <div class="o_wizard_footer">
+                            <button string="← Previous" name="action_previous_step" type="object" class="btn-secondary"/>
+                            <button string="Cancel" special="cancel" class="btn-secondary"/>
+                            <button string="Next Step →" name="action_next_step" type="object" class="btn-primary"/>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- STEP 3: Configure Controls                 -->
+                    <!-- ========================================== -->
+                    <div invisible="current_step != 3">
+                        <div class="o_page_header">
+                            <h2 class="o_page_title">Control Configuration</h2>
+                            <p class="o_page_subtitle">Configure control effectiveness for each risk pillar</p>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>ℹ️ Instructions:</strong>
+                            <ul class="mb-0">
+                                <li>Review and adjust risk percentages if needed (must sum to 100%)</li>
+                                <li>Select control effectiveness band for each pillar</li>
+                                <li>Inherent and residual scores update automatically</li>
+                            </ul>
+                        </div>
+
+                        <field name="wizard_pillar_ids" nolabel="1">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle"/>
+                                <field name="pillar"/>
+                                <field name="low_pct"/>
+                                <field name="medium_pct"/>
+                                <field name="high_pct"/>
+                                <field name="inherent_score" widget="float" digits="[16,2]"
+                                       decoration-danger="inherent_label == 'high'"
+                                       decoration-warning="inherent_label == 'medium'"
+                                       decoration-success="inherent_label == 'low'"/>
+                                <field name="inherent_label" column_invisible="1"/>
+                                <field name="control_band"/>
+                                <field name="custom_control_pct"/>
+                                <field name="control_pct"/>
+                                <field name="residual_score" widget="float" digits="[16,2]"
+                                       decoration-danger="residual_label == 'high'"
+                                       decoration-warning="residual_label == 'medium'"
+                                       decoration-success="residual_label == 'low'"/>
+                                <field name="residual_label" column_invisible="1"/>
+                            </list>
+                        </field>
+
+                        <!-- Navigation Footer -->
+                        <div class="o_wizard_footer">
+                            <button string="← Previous" name="action_previous_step" type="object" class="btn-secondary"/>
+                            <button string="Cancel" special="cancel" class="btn-secondary"/>
+                            <button string="Next Step →" name="action_next_step" type="object" class="btn-primary"/>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- STEP 4: Review Residual Risk               -->
+                    <!-- ========================================== -->
+                    <div invisible="current_step != 4">
+                        <div class="o_page_header">
+                            <h2 class="o_page_title">Residual Risk Summary</h2>
+                            <p class="o_page_subtitle">Final risk assessment after applying controls</p>
+                        </div>
+
+                        <group>
+                            <group>
+                                <div class="o_stat_card">
+                                    <div class="o_stat_value">
+                                        <field name="computed_overall_residual" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                    <div class="o_stat_label">Overall Residual Risk</div>
+                                    <field name="computed_overall_residual_label" widget="badge" nolabel="1"
+                                           decoration-danger="computed_overall_residual_label == 'high'"
+                                           decoration-warning="computed_overall_residual_label == 'medium'"
+                                           decoration-success="computed_overall_residual_label == 'low'"/>
+                                </div>
+                            </group>
+                            <group>
+                                <div class="o_stat_card">
+                                    <div class="o_stat_value">
+                                        <field name="risk_reduction" nolabel="1"/>%
+                                    </div>
+                                    <div class="o_stat_label">Risk Reduction</div>
+                                </div>
+                            </group>
+                        </group>
+
+                        <separator string="Pillar Comparison"/>
+                        <group>
+                            <group>
+                                <div class="o_risk_card">
+                                    <h4>👥 Customer</h4>
+                                    <div class="o_risk_row">
+                                        <span>Inherent</span>
+                                        <field name="customer_inherent_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Control</span>
+                                        <span style="white-space: nowrap;"><field name="customer_control_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Residual</span>
+                                        <field name="customer_residual_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                </div>
+                            </group>
+                            <group>
+                                <div class="o_risk_card">
+                                    <h4>🌍 Geography</h4>
+                                    <div class="o_risk_row">
+                                        <span>Inherent</span>
+                                        <field name="geography_inherent_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Control</span>
+                                        <span style="white-space: nowrap;"><field name="geography_control_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Residual</span>
+                                        <field name="geography_residual_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                </div>
+                            </group>
+                        </group>
+                        <group>
+                            <group>
+                                <div class="o_risk_card">
+                                    <h4>📦 Products</h4>
+                                    <div class="o_risk_row">
+                                        <span>Inherent</span>
+                                        <field name="products_inherent_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Control</span>
+                                        <span style="white-space: nowrap;"><field name="products_control_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Residual</span>
+                                        <field name="products_residual_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                </div>
+                            </group>
+                            <group>
+                                <div class="o_risk_card">
+                                    <h4>🚚 Delivery</h4>
+                                    <div class="o_risk_row">
+                                        <span>Inherent</span>
+                                        <field name="delivery_inherent_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Control</span>
+                                        <span style="white-space: nowrap;"><field name="delivery_control_pct" nolabel="1" readonly="1"/> %</span>
+                                    </div>
+                                    <div class="o_risk_row">
+                                        <span>Residual</span>
+                                        <field name="delivery_residual_score" nolabel="1" widget="float" digits="[16,2]"/>
+                                    </div>
+                                </div>
+                            </group>
+                        </group>
+
+                        <!-- Navigation Footer -->
+                        <div class="o_wizard_footer">
+                            <button string="← Previous" name="action_previous_step" type="object" class="btn-secondary"/>
+                            <button string="Cancel" special="cancel" class="btn-secondary"/>
+                            <button string="Next Step →" name="action_next_step" type="object" class="btn-primary"/>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- STEP 5: Generate Report                    -->
+                    <!-- ========================================== -->
+                    <div invisible="current_step != 5">
+                        <div class="o_page_header">
+                            <h2 class="o_page_title">Generate EWRA Report</h2>
+                            <p class="o_page_subtitle">Review summary and generate comprehensive assessment</p>
+                        </div>
+
+                        <div class="o_stat_card mb-3">
+                            <h4 style="margin-bottom: 1rem; font-weight: 600;">Assessment Summary</h4>
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Period:</strong> <field name="period_start" nolabel="1"/> to <field name="period_end" nolabel="1"/>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Total Customers:</strong> <field name="total_customers" nolabel="1"/>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <strong>Overall Residual Risk:</strong> <field name="computed_overall_residual" nolabel="1" widget="float" digits="[16,2]"/>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Risk Reduction:</strong> <field name="risk_reduction" nolabel="1"/>%
+                                </div>
+                            </div>
+                        </div>
+
+                        <group>
+                            <button string="🚀 Generate EWRA Assessment"
+                                    name="action_generate_ewra"
+                                    type="object"
+                                    class="btn-primary btn-lg oe_highlight"/>
+                        </group>
+
+                        <group invisible="generated_run_id == False">
+                            <div class="alert alert-success">
+                                <h4>✅ Assessment Generated Successfully!</h4>
+                                <p class="mb-0">EWRA Run: <field name="generated_run_id" nolabel="1"/></p>
+                            </div>
+                            <button string="View EWRA Run →"
+                                    name="action_view_generated_run"
+                                    type="object"
+                                    class="btn-success btn-lg"/>
+                            <button string="Close" special="cancel" class="btn-secondary"/>
+                        </group>
+
+                        <!-- Navigation Footer (only when not generated) -->
+                        <div class="o_wizard_footer" invisible="generated_run_id != False">
+                            <button string="← Previous" name="action_previous_step" type="object" class="btn-secondary"/>
+                            <button string="Cancel" special="cancel" class="btn-secondary"/>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Action: Launch EWRA Wizard                         -->
+    <!-- ================================================== -->
+    <record id="action_ewra_wizard" model="ir.actions.act_window">
+        <field name="name">Start New EWRA Assessment</field>
+        <field name="res_model">nexaml.ewra.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_nexaml_ewra_run"/>
+    </record>
+
+    <!-- Menu item -->
+    <menuitem id="menu_ewra_wizard"
+              name="New EWRA Assessment"
+              parent="nexaml.menu_ewra"
+              action="action_ewra_wizard"
+              sequence="5"/>
+</odoo>
