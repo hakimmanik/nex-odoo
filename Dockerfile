@@ -18,4 +18,4 @@ RUN chmod +x /entrypoint.sh
 USER odoo
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["--dev=all", "--log-level=debug"]
+CMD ["--addons-path=/usr/lib/python3/dist-packages/odoo/addons,/mnt/extra-addons", "--dev=all", "--log-level=debug"]
