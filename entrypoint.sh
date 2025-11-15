@@ -8,6 +8,16 @@ set -e
 : ${DB_PORT:=5432}
 : ${DB_NAME:=odoo}
 
+# Debug: Check if extra-addons directory exists
+echo "=== DEBUG: Checking /mnt/extra-addons directory ==="
+if [ -d "/mnt/extra-addons" ]; then
+  echo "Directory exists, listing contents:"
+  ls -la /mnt/extra-addons
+else
+  echo "ERROR: /mnt/extra-addons does not exist!"
+fi
+echo "============================================"
+
 # Set PostgreSQL environment variables for psql
 export PGHOST="$HOST"
 export PGPORT="$DB_PORT"
