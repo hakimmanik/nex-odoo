@@ -12,7 +12,7 @@ services:
     volumes:
       - odoo-db-data:/var/lib/postgresql/data/pgdata
     ports:
-      - "5433:5432"
+      - "5432"
     networks:
       - nex-odoo-network
     healthcheck:
@@ -28,8 +28,8 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "8069:8069"
-      - "8072:8072"  # Longpolling
+      - "8069"
+      - "8072"
     environment:
       - HOST=db
       - USER=odoo
@@ -56,7 +56,7 @@ services:
       - PGADMIN_DEFAULT_PASSWORD=admin
       - PGADMIN_CONFIG_SERVER_MODE=False
     ports:
-      - "5050:80"
+      - "80"
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     networks:
