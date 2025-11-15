@@ -35,13 +35,13 @@ services:
       - USER=odoo
       - PASSWORD=odoo
       - DB_PORT=5432
+      - ADDONS_PATH=/mnt/extra-addons
+      - LOG_LEVEL=info
     volumes:
       # Mount the nexaml addon
       - ./addons/nexaml:/mnt/extra-addons/nexaml:ro
       # Persistent data
       - odoo-web-data:/var/lib/odoo
-      # Optional: mount custom config
-      - ./odoo.conf:/etc/odoo/odoo.conf:ro
     networks:
       - nex-odoo-network
     command: --dev=all --log-level=debug
