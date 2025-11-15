@@ -8,9 +8,15 @@ set -e
 : ${DB_PORT:=5432}
 : ${DB_NAME:=odoo}
 
+# Set PostgreSQL environment variables for psql
+export PGHOST="$HOST"
+export PGPORT="$DB_PORT"
+export PGUSER="$USER"
+export PGPASSWORD="$PASSWORD"
+
 # Wait for postgres to be ready
 echo "Waiting for PostgreSQL to be ready..."
-until PGPASSWORD="$PASSWORD" psql -h "$HOST" -p "$DB_PORT" -U "$USER" -l 2>/dev/null | grep -q template1; do
+until psql -l 2>/dev/null | grep -q template1; do
   echo "PostgreSQL is unavailable - sleeping"
   sleep 2
 done
@@ -18,7 +24,7 @@ done
 echo "PostgreSQL is up - checking database"
 
 # Check if database exists
-if PGPASSWORD="$PASSWORD" psql -h "$HOST" -p "$DB_PORT" -U "$USER" -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
+if psql -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
   echo "Database '$DB_NAME' already exists."
 else
   echo "Database '$DB_NAME' does not exist. Creating and initializing with nexaml module..."
