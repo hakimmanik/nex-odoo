@@ -35,16 +35,13 @@ services:
       - USER=odoo
       - PASSWORD=odoo
       - DB_PORT=5432
-      - ADDONS_PATH=/mnt/extra-addons
+      - ADDONS_PATH=/mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons
       - LOG_LEVEL=info
     volumes:
-      # Mount the nexaml addon
-      - ./addons/nexaml:/mnt/extra-addons/nexaml:ro
       # Persistent data
       - odoo-web-data:/var/lib/odoo
     networks:
       - nex-odoo-network
-    command: --dev=all --log-level=debug
     restart: unless-stopped
 
   # Optional: pgAdmin for database management
