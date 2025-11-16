@@ -36,6 +36,7 @@ Comprehensive AML compliance solution including:
         'views/screening_views.xml',
         'views/case_management_views.xml',
         'views/transaction_monitoring_views.xml',
+        'views/account_move_views.xml',
         'views/ewra_views.xml',
         'views/cra_views.xml',
         'views/res_partner_views.xml',
