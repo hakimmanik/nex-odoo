@@ -29,6 +29,7 @@ Comprehensive AML compliance solution including:
     'data': [
         'security/ir.model.access.csv',
         'security/security.xml',
+        'data/company_logo.xml',
         'data/sequences.xml',
         'data/cron.xml',
         'data/transaction_rules.xml',
