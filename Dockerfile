@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/ap
 # Copy extra-addons directory
 COPY --chown=odoo:odoo extra-addons /mnt/extra-addons
 
+# Copy custom company logo
+COPY --chown=odoo:odoo logo.png /usr/lib/python3/dist-packages/odoo/addons/base/static/img/res_company_logo.png
+
 # Copy custom entrypoint
 COPY --chown=odoo:odoo entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
