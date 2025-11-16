@@ -14,8 +14,8 @@
     </template>
 
     <template id="login_layout" inherit_id="web.login_layout" name="NexAML Login Logo">
-        <xpath expr="//div[hasclass('oe_logo')]//img" position="attributes">
-            <attribute name="src">/nexaml/static/img/logo.png</attribute>
+        <xpath expr="//img[@alt='Logo']" position="attributes">
+            <attribute name="t-attf-src">/nexaml/static/img/logo.png</attribute>
         </xpath>
     </template>
 </odoo>
