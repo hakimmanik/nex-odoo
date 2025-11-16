@@ -25,6 +25,7 @@ Comprehensive AML compliance solution including:
         'mail',
         'contacts',
         'product',
+        'web',
     ],
     'data': [
         'security/ir.model.access.csv',
@@ -32,6 +33,7 @@ Comprehensive AML compliance solution including:
         'data/sequences.xml',
         'data/cron.xml',
         'data/transaction_rules.xml',
+        'views/webclient_templates.xml',
         'views/menu.xml',
         'views/screening_views.xml',
         'views/case_management_views.xml',

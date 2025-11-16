@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="webclient_bootstrap" inherit_id="web.webclient_bootstrap" name="NexAML Custom Logo">
+        <xpath expr="//link[@rel='icon']" position="after">
+            <style>
+                .o_main_navbar .o_menu_brand {
+                    background-image: url('/nexaml/static/img/logo.png') !important;
+                    background-size: contain !important;
+                    background-repeat: no-repeat !important;
+                    background-position: center !important;
+                }
+            </style>
+        </xpath>
+    </template>
+
+    <template id="login_layout" inherit_id="web.login_layout" name="NexAML Login Logo">
+        <xpath expr="//div[hasclass('oe_logo')]//img" position="attributes">
+            <attribute name="src">/nexaml/static/img/logo.png</attribute>
+        </xpath>
+    </template>
+</odoo>
