@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15
@@ -39,9 +37,7 @@ services:
       - ADDONS_PATH=/mnt/extra-addons
       - LOG_LEVEL=info
     volumes:
-      # Mount extra-addons directory
-      - ./extra-addons:/mnt/extra-addons:ro
-      # Persistent data
+      - ./extra-addons:/mnt/extra-addons
       - odoo-web-data:/var/lib/odoo
     networks:
       - nex-odoo-network
@@ -68,11 +64,8 @@ services:
 
 volumes:
   odoo-db-data:
-    driver: local
   odoo-web-data:
-    driver: local
   pgadmin-data:
-    driver: local
 
 networks:
   nex-odoo-network:
