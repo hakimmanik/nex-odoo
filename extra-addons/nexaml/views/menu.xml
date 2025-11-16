@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Main Menu -->
+    <!-- Main Menu - parent menus only, no actions -->
     <menuitem id="menu_nexaml_root"
               name="NexAML"
               sequence="50"
@@ -12,41 +12,10 @@
               parent="menu_nexaml_root"
               sequence="10"/>
 
-    <menuitem id="menu_cases"
-              name="Cases"
-              parent="menu_operations"
-              sequence="1"
-              action="action_case"/>
-
-    <menuitem id="menu_alerts"
-              name="Alerts"
-              parent="menu_operations"
-              sequence="2"
-              action="action_alert"/>
-
-    <menuitem id="menu_screenings"
-              name="Screenings"
-              parent="menu_operations"
-              sequence="3"
-              action="action_screening"/>
-
-    <!-- Transaction Scenarios Menu -->
-    <menuitem id="menu_transaction_scenarios"
-              name="Transaction Scenarios"
-              parent="menu_nexaml_root"
-              sequence="30"
-              action="action_transaction_rule"/>
-
     <!-- Reporting Menu -->
     <menuitem id="menu_reporting"
               name="Reporting"
               parent="menu_nexaml_root"
               sequence="50"/>
-
-    <menuitem id="menu_generate_report"
-              name="Generate Report"
-              parent="menu_reporting"
-              sequence="1"
-              action="action_report_wizard"/>
 
 </odoo>

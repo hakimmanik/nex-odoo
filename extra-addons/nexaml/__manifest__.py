@@ -48,6 +48,7 @@ Comprehensive AML compliance solution including:
         'reports/report_templates_extended.xml',
         'reports/report_templates_extended2.xml',
         'reports/ewra_report_comprehensive.xml',
+        'views/menu_items.xml',
     ],
     'installable': True,
     'application': True,
