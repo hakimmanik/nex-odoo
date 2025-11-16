@@ -23,9 +23,10 @@ Thumbs.db
 .git/
 .gitignore
 
-# Docs
+# Docs (excluding extra-addons which needs all files)
 *.md
 !README.md
+!extra-addons/**/*.md
 
 # Backup files
 *.sql
