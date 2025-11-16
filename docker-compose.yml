@@ -37,7 +37,6 @@ services:
       - ADDONS_PATH=/mnt/extra-addons
       - LOG_LEVEL=info
     volumes:
-      - ./extra-addons:/mnt/extra-addons
       - odoo-web-data:/var/lib/odoo
     networks:
       - nex-odoo-network
